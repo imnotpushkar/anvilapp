@@ -1,0 +1,2179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Anvil</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --border: #1f1f1f;
+      --border-bright: #2e2e2e;
+      --accent: #ff4d00;
+      --accent2: #ffcc00;
+      --text: #b0b0b0;
+      --text-bright: #f0f0f0;
+      --text-dim: #444;
+      --mono: 'DM Mono', monospace;
+      --sans: 'DM Sans', sans-serif;
+      --display: 'Bebas Neue', sans-serif;
+
+      /* Tool palettes */
+      --roaster: #ff4d00;
+      --roaster-glow: rgba(255, 77, 0, 0.15);
+      --idea: #00a8ff;
+      --idea-glow: rgba(0, 168, 255, 0.15);
+      --stack: #00e676;
+      --stack-glow: rgba(0, 230, 118, 0.15);
+      --resume: #a855f7;
+      --resume-glow: rgba(168, 85, 247, 0.15);
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Noise overlay */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+      opacity: 0.035;
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    /* Fire bubbles canvas */
+    #fire-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* NAV */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 48px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: rgba(10,10,10,0.92);
+      backdrop-filter: blur(12px);
+      z-index: 100;
+    }
+
+    .nav-logo {
+      font-family: var(--display);
+      font-size: 22px;
+      letter-spacing: 0.05em;
+      color: var(--text-bright);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0px;
+      line-height: 1;
+    }
+
+    .nav-logo-name {
+      font-family: var(--display);
+      font-size: 22px;
+      letter-spacing: 0.05em;
+      color: var(--text-bright);
+    }
+
+    .nav-logo span { color: var(--accent); }
+
+    .nav-logo-tagline {
+      font-family: var(--mono);
+      font-size: 8px;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-top: 2px;
+      vertical-align: super;
+    }
+
+    .nav-sparks {
+      display: flex;
+      gap: 3px;
+      align-items: flex-end;
+      height: 12px;
+      margin-bottom: 3px;
+    }
+
+    .nav-sparks span {
+      display: block;
+      width: 2px;
+      border-radius: 2px;
+      background: var(--accent);
+      animation: navFlicker 1.4s ease-in-out infinite;
+    }
+
+    .nav-sparks span:nth-child(1) { height: 5px;  animation-delay: 0.0s; }
+    .nav-sparks span:nth-child(2) { height: 9px;  animation-delay: 0.15s; }
+    .nav-sparks span:nth-child(3) { height: 12px; animation-delay: 0.05s; }
+    .nav-sparks span:nth-child(4) { height: 7px;  animation-delay: 0.2s; }
+    .nav-sparks span:nth-child(5) { height: 4px;  animation-delay: 0.1s; }
+
+    @keyframes navFlicker {
+      0%, 100% { opacity: 1; transform: scaleY(1); }
+      50% { opacity: 0.5; transform: scaleY(0.7); }
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--accent); }
+
+    /* HUD */
+    .hud {
+      padding: 0 48px;
+      background: rgba(17,17,17,0.95);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      position: sticky;
+      top: 65px;
+      z-index: 99;
+      backdrop-filter: blur(12px);
+    }
+
+    .hud-block {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 14px 28px;
+      border-right: 1px solid var(--border);
+      gap: 6px;
+      min-width: 140px;
+    }
+
+    .hud-block:last-child { border-right: none; flex: 1; }
+
+    .hud-label {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    .hud-value {
+      font-family: var(--display);
+      font-size: 22px;
+      letter-spacing: 0.05em;
+      line-height: 1;
+    }
+
+    .hud-level .hud-value { color: var(--accent2); }
+    .hud-streak .hud-value { color: #ff6b35; }
+    .hud-uses .hud-value { color: #00e5ff; }
+    .hud-xp .hud-value { color: var(--accent); }
+
+    .hud-streak-fire,
+    .fire-animated {
+      display: inline-block;
+      animation: fireFlicker 0.8s ease-in-out infinite alternate;
+      transform-origin: bottom center;
+    }
+
+    .hud-streak-fire { font-size: 14px; margin-left: 4px; }
+    .fire-animated { font-size: 32px; margin-left: 6px; }
+
+    @keyframes fireFlicker {
+      0%   { transform: scale(1) rotate(-5deg); opacity: 0.85; }
+      50%  { transform: scale(1.2) rotate(3deg); opacity: 1; }
+      100% { transform: scale(1.05) rotate(-2deg); opacity: 0.9; }
+    }
+
+    /* XP Progress in HUD */
+    .hud-xp-block {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 14px 28px;
+      gap: 8px;
+    }
+
+    .hud-xp-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .hud-xp-label {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    .hud-xp-points {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--accent);
+      letter-spacing: 0.05em;
+    }
+
+    .hud-xp-track {
+      width: 100%;
+      height: 6px;
+      background: var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hud-xp-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+      position: relative;
+    }
+
+    .hud-xp-fill::after {
+      content: '';
+      position: absolute;
+      top: 0; right: 0;
+      width: 20px; height: 100%;
+      background: white;
+      opacity: 0.4;
+      filter: blur(4px);
+    }
+
+    /* XP Float animation */
+    .xp-float {
+      position: fixed;
+      font-family: var(--display);
+      font-size: 24px;
+      color: var(--accent2);
+      pointer-events: none;
+      z-index: 9999;
+      animation: floatUp 1.2s ease forwards;
+      text-shadow: 0 0 20px rgba(255,204,0,0.8);
+    }
+
+    @keyframes floatUp {
+      0% { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-80px) scale(1.3); }
+    }
+
+    /* Level up banner */
+    .levelup-banner {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.8);
+      background: var(--surface);
+      border: 2px solid var(--accent2);
+      padding: 32px 64px;
+      text-align: center;
+      z-index: 9998;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s;
+      box-shadow: 0 0 60px rgba(255,204,0,0.3);
+    }
+
+    .levelup-banner.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+      pointer-events: all;
+    }
+
+    .levelup-title {
+      font-family: var(--display);
+      font-size: 48px;
+      color: var(--accent2);
+      letter-spacing: 0.1em;
+    }
+
+    .levelup-sub {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text-dim);
+      letter-spacing: 0.15em;
+      margin-top: 8px;
+    }
+
+    /* HERO */
+    .hero {
+      padding: 100px 48px 80px;
+      max-width: 1100px;
+      margin: 0 auto;
+      animation: fadeUp 0.6s ease both;
+    }
+
+    .hero-eyebrow {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .hero-eyebrow::before {
+      content: '';
+      display: inline-block;
+      width: 24px;
+      height: 1px;
+      background: var(--accent);
+    }
+
+    .hero-heading-block {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .hero-sparks {
+      display: flex;
+      gap: 5px;
+      align-items: flex-end;
+      height: 36px;
+      margin-bottom: 16px;
+    }
+
+    .hero-sparks span {
+      display: block;
+      width: 4px;
+      border-radius: 3px;
+      background: var(--accent);
+      animation: heroFlicker 1.4s ease-in-out infinite;
+    }
+
+    .hero-sparks span:nth-child(1) { height: 14px; animation-delay: 0.0s; }
+    .hero-sparks span:nth-child(2) { height: 26px; animation-delay: 0.15s; }
+    .hero-sparks span:nth-child(3) { height: 36px; animation-delay: 0.05s; }
+    .hero-sparks span:nth-child(4) { height: 20px; animation-delay: 0.2s; }
+    .hero-sparks span:nth-child(5) { height: 12px; animation-delay: 0.1s; }
+
+    @keyframes heroFlicker {
+      0%, 100% { opacity: 1; transform: scaleY(1); }
+      50% { opacity: 0.45; transform: scaleY(0.75); }
+    }
+
+    .hero-tagline {
+      font-family: var(--mono);
+      font-size: 13px;
+      letter-spacing: 0.45em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 20px;
+      display: block;
+    }
+
+    .hero h1 {
+      font-family: var(--display);
+      font-size: clamp(64px, 10vw, 120px);
+      line-height: 0.95;
+      letter-spacing: 0.02em;
+      color: var(--text-bright);
+      margin-bottom: 4px;
+    }
+
+    .hero-sub {
+      font-size: 16px;
+      color: var(--text);
+      font-weight: 300;
+      max-width: 480px;
+      line-height: 1.7;
+      margin-bottom: 48px;
+    }
+
+    .hero-stats {
+      display: flex;
+      gap: 0;
+      margin-top: 8px;
+    }
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 20px 32px;
+      border: 1px solid var(--border);
+      position: relative;
+      transition: border-color 0.2s, background 0.2s;
+      min-width: 140px;
+    }
+
+    .stat:hover {
+      border-color: var(--border-bright);
+      background: var(--surface);
+    }
+
+    .stat:not(:last-child) { border-right: none; }
+
+    .stat-num {
+      font-family: var(--display);
+      font-size: 40px;
+      line-height: 1;
+    }
+
+    .stat-uses .stat-num { color: #00e5ff; }
+    .stat-streak .stat-num { color: #ff6b35; }
+    .stat-xp .stat-num { color: var(--accent); }
+
+    .stat-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    /* TOOLS SECTION */
+    .tools-section {
+      padding: 0 48px 100px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2px;
+    }
+
+    .tool-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 40px 36px;
+      cursor: pointer;
+      transition: border-color 0.3s, background 0.3s, box-shadow 0.3s;
+      position: relative;
+      overflow: hidden;
+      animation: fadeUp 0.5s ease both;
+    }
+
+    .tool-card:nth-child(2) { animation-delay: 0.1s; }
+    .tool-card:nth-child(3) { animation-delay: 0.2s; }
+    .tool-card:nth-child(4) { animation-delay: 0.3s; }
+
+    .tool-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      transform: scaleX(0);
+      transition: transform 0.35s ease;
+      transform-origin: left;
+    }
+
+    .tool-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+
+    .tool-card:hover::before { transform: scaleX(1); }
+    .tool-card:hover::after { opacity: 1; }
+
+    /* Roaster */
+    .card-roaster::before { background: var(--roaster); }
+    .card-roaster::after { background: radial-gradient(ellipse at top left, var(--roaster-glow), transparent 70%); }
+    .card-roaster:hover { border-color: rgba(255,77,0,0.4); box-shadow: 0 0 30px rgba(255,77,0,0.08); }
+    .card-roaster .tool-number { color: var(--border-bright); transition: color 0.2s; }
+    .card-roaster:hover .tool-number { color: var(--roaster); }
+    .card-roaster .tool-tag { color: var(--roaster); border-color: var(--roaster); }
+    .card-roaster .tool-xp { color: var(--roaster); }
+
+    /* Idea */
+    .card-idea::before { background: var(--idea); }
+    .card-idea::after { background: radial-gradient(ellipse at top left, var(--idea-glow), transparent 70%); }
+    .card-idea:hover { border-color: rgba(0,168,255,0.4); box-shadow: 0 0 30px rgba(0,168,255,0.08); }
+    .card-idea .tool-number { color: var(--border-bright); transition: color 0.2s; }
+    .card-idea:hover .tool-number { color: var(--idea); }
+    .card-idea .tool-tag { color: var(--idea); border-color: var(--idea); }
+    .card-idea .tool-xp { color: var(--idea); }
+
+    /* Stack */
+    .card-stack::before { background: var(--stack); }
+    .card-stack::after { background: radial-gradient(ellipse at top left, var(--stack-glow), transparent 70%); }
+    .card-stack:hover { border-color: rgba(0,230,118,0.4); box-shadow: 0 0 30px rgba(0,230,118,0.08); }
+    .card-stack .tool-number { color: var(--border-bright); transition: color 0.2s; }
+    .card-stack:hover .tool-number { color: var(--stack); }
+    .card-stack .tool-tag { color: var(--stack); border-color: var(--stack); }
+    .card-stack .tool-xp { color: var(--stack); }
+
+    /* Resume */
+    .card-resume::before { background: var(--resume); }
+    .card-resume::after { background: radial-gradient(ellipse at top left, var(--resume-glow), transparent 70%); }
+    .card-resume:hover { border-color: rgba(168,85,247,0.4); box-shadow: 0 0 30px rgba(168,85,247,0.08); }
+    .card-resume .tool-number { color: var(--border-bright); transition: color 0.2s; }
+    .card-resume:hover .tool-number { color: var(--resume); }
+    .card-resume .tool-tag { color: var(--resume); border-color: var(--resume); }
+    .card-resume .tool-xp { color: var(--resume); }
+
+    .tool-number {
+      font-family: var(--display);
+      font-size: 48px;
+      line-height: 1;
+      margin-bottom: 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .tool-icon {
+      font-size: 28px;
+      margin-bottom: 16px;
+    }
+
+    .tool-name {
+      font-family: var(--display);
+      font-size: 28px;
+      color: var(--text-bright);
+      letter-spacing: 0.03em;
+      margin-bottom: 12px;
+    }
+
+    .tool-desc {
+      font-size: 13px;
+      color: var(--text);
+      line-height: 1.7;
+      font-weight: 300;
+      margin-bottom: 28px;
+    }
+
+    .tool-tag {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      border: 1px solid;
+      padding: 4px 10px;
+      display: inline-block;
+      position: relative;
+      z-index: 1;
+    }
+
+    .tool-xp {
+      font-family: var(--mono);
+      font-size: 10px;
+      margin-top: 12px;
+      letter-spacing: 0.1em;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* MODAL OVERLAY */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      backdrop-filter: blur(4px);
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border-bright);
+      width: 100%;
+      max-width: 600px;
+      padding: 48px;
+      position: relative;
+      transform: translateY(20px);
+      transition: transform 0.3s;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-overlay.active .modal { transform: translateY(0); }
+
+    .modal-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 20px;
+      cursor: pointer;
+      transition: color 0.2s;
+      font-family: var(--mono);
+    }
+
+    .modal-close:hover { color: var(--text-bright); }
+
+    .modal-title {
+      font-family: var(--display);
+      font-size: 36px;
+      color: var(--text-bright);
+      margin-bottom: 8px;
+      letter-spacing: 0.03em;
+    }
+
+    .modal-sub {
+      font-size: 13px;
+      color: var(--text-dim);
+      font-family: var(--mono);
+      margin-bottom: 32px;
+      letter-spacing: 0.05em;
+    }
+
+    /* Form fields */
+    .field { margin-bottom: 20px; }
+
+    .field label {
+      display: block;
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+    }
+
+    .field input, .field select {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border-bright);
+      color: var(--text-bright);
+      font-family: var(--mono);
+      font-size: 14px;
+      padding: 12px 16px;
+      outline: none;
+      transition: border-color 0.2s;
+      appearance: none;
+    }
+
+    .field input:focus, .field select:focus {
+      border-color: var(--accent);
+    }
+
+    .field input::placeholder { color: var(--text-dim); }
+
+    .fields-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .submit-btn {
+      width: 100%;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      font-family: var(--display);
+      font-size: 20px;
+      letter-spacing: 0.1em;
+      padding: 16px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      margin-top: 8px;
+    }
+
+    .submit-btn:hover { background: #ff6620; }
+    .submit-btn:active { transform: scale(0.99); }
+    .submit-btn:disabled { background: var(--border-bright); cursor: not-allowed; }
+
+    /* Result box */
+    .result-box {
+      margin-top: 24px;
+      background: var(--bg);
+      border: 1px solid var(--border-bright);
+      border-left: 3px solid var(--accent);
+      padding: 20px 24px;
+      font-size: 14px;
+      line-height: 1.8;
+      color: var(--text-bright);
+      display: none;
+      animation: fadeUp 0.3s ease both;
+    }
+
+    .result-box.visible { display: block; }
+
+    .result-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 10px;
+    }
+
+    .xp-toast {
+      margin-top: 12px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--accent2);
+      letter-spacing: 0.1em;
+    }
+
+    /* Modal color accents */
+    .modal-roaster { border-top: 2px solid var(--roaster); }
+    .modal-roaster .modal-sub { color: var(--roaster); }
+    .modal-roaster .submit-btn { background: var(--roaster); }
+    .modal-roaster .submit-btn:hover { background: #ff6620; }
+    .modal-roaster .verdict-panel { border-left-color: var(--roaster); }
+    .modal-roaster .result-label { color: var(--roaster); }
+    .modal-roaster .verdict-placeholder { color: var(--roaster); }
+    .modal-roaster .xp-toast { color: var(--roaster); }
+
+    .modal-idea { border-top: 2px solid var(--idea); }
+    .modal-idea .modal-sub { color: var(--idea); }
+    .modal-idea .submit-btn { background: var(--idea); }
+    .modal-idea .submit-btn:hover { background: #33bbff; }
+    .modal-idea .verdict-panel { border-left-color: var(--idea); }
+    .modal-idea .result-label { color: var(--idea); }
+    .modal-idea .verdict-placeholder { color: var(--idea); }
+    .modal-idea .xp-toast { color: var(--idea); }
+
+    .modal-stack { border-top: 2px solid var(--stack); }
+    .modal-stack .modal-sub { color: var(--stack); }
+    .modal-stack .submit-btn { background: var(--stack); color: #000; }
+    .modal-stack .submit-btn:hover { background: #33ffaa; }
+    .modal-stack .verdict-panel { border-left-color: var(--stack); }
+    .modal-stack .result-label { color: var(--stack); }
+    .modal-stack .verdict-placeholder { color: var(--stack); }
+    .modal-stack .xp-toast { color: var(--stack); }
+
+    .modal-resume { border-top: 2px solid var(--resume); }
+    .modal-resume .modal-sub { color: var(--resume); }
+    .modal-resume .submit-btn { background: var(--resume); }
+    .modal-resume .submit-btn:hover { background: #c084fc; }
+    .modal-resume .verdict-panel { border-left-color: var(--resume); }
+    .modal-resume .result-label { color: var(--resume); }
+    .modal-resume .verdict-placeholder { color: var(--resume); }
+    .modal-resume .xp-toast { color: var(--resume); }
+
+    /* Mode toggle */
+    .mode-toggle {
+      display: flex;
+      gap: 0;
+      margin-bottom: 20px;
+      border: 1px solid var(--border-bright);
+      width: fit-content;
+    }
+    .mode-btn {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 10px 20px;
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .mode-btn.active { background: var(--resume); color: #fff; }
+    .mode-btn:not(.active):hover { background: var(--border); color: var(--text-bright); }
+
+    /* Input mode panels */
+    .input-mode { display: none; }
+    .input-mode.active { display: block; }
+
+    /* Textarea field */
+    .field textarea {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border-bright);
+      color: var(--text-bright);
+      font-family: var(--mono);
+      font-size: 13px;
+      padding: 12px 16px;
+      outline: none;
+      transition: border-color 0.2s;
+      resize: vertical;
+      min-height: 150px;
+      line-height: 1.6;
+    }
+    .field textarea:focus { border-color: var(--resume); }
+    .field textarea::placeholder { color: var(--text-dim); }
+
+    /* Split verdict panel for resume */
+    .verdict-split {
+      display: flex;
+      flex-direction: column;
+    }
+    .verdict-half {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .verdict-half:last-child { border-bottom: none; }
+    .verdict-half-label {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .verdict-half-label.roast-label { color: var(--resume); }
+    .verdict-half-label.fix-label { color: var(--stack); }
+    .verdict-half-text {
+      font-size: 13px;
+      line-height: 1.8;
+      color: var(--text-bright);
+      white-space: pre-wrap;
+    }
+
+    /* Two column modal */
+    .modal-wide {
+      max-width: 900px !important;
+    }
+
+    .modal-columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      margin-top: 8px;
+    }
+
+    .modal-left {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-right {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .verdict-panel {
+      background: var(--bg);
+      border: 1px solid var(--border-bright);
+      border-left: 3px solid var(--accent);
+      min-height: 300px;
+      display: flex;
+      flex-direction: column;
+      padding: 24px;
+    }
+
+    .verdict-waiting {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 260px;
+      gap: 12px;
+      opacity: 0.3;
+    }
+
+    .verdict-icon {
+      font-size: 32px;
+      animation: pulse 2s ease infinite;
+    }
+
+    .verdict-placeholder {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+    }
+
+    .verdict-hint {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      text-align: center;
+      letter-spacing: 0.05em;
+    }
+
+    .verdict-result {
+      overflow-y: visible;
+    }
+
+    .verdict-result #roaster-text {
+      font-size: 14px;
+      line-height: 1.8;
+      color: var(--text-bright);
+      margin-top: 8px;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.3; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(1.1); }
+    }
+
+    /* Loading spinner */
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+
+    /* Animations */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border-bright); }
+
+    /* Scroll blur overlay — fades content as it exits top */
+    .scroll-fade {
+      pointer-events: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 220px;
+      background: linear-gradient(
+        to bottom,
+        rgba(10,10,10,0.98) 0%,
+        rgba(10,10,10,0.7) 40%,
+        rgba(10,10,10,0) 100%
+      );
+      z-index: 98;
+    }
+
+    /* Share button */
+    .share-btn {
+      margin-top: 14px;
+      background: none;
+      border: 1px solid var(--border-bright);
+      color: var(--text-dim);
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 8px 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: none;
+    }
+    .share-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .share-btn.visible { display: inline-block; }
+
+    /* Share overlay */
+    .share-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.88);
+      z-index: 300;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      backdrop-filter: blur(6px);
+    }
+    .share-overlay.active { opacity: 1; pointer-events: all; }
+
+    .share-panel {
+      background: var(--surface);
+      border: 1px solid var(--border-bright);
+      width: 100%;
+      max-width: 820px;
+      padding: 32px;
+      display: flex;
+      gap: 32px;
+      position: relative;
+      animation: fadeUp 0.3s ease both;
+    }
+
+    .share-close {
+      position: absolute;
+      top: 16px; right: 16px;
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 18px;
+      cursor: pointer;
+      font-family: var(--mono);
+      transition: color 0.2s;
+    }
+    .share-close:hover { color: var(--text-bright); }
+
+    .share-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      min-width: 190px;
+    }
+
+    .share-control-group { display: flex; flex-direction: column; gap: 10px; }
+
+    .share-control-label {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    .share-switcher { display: flex; flex-direction: column; gap: 6px; }
+
+    .share-switch-btn {
+      background: var(--bg);
+      border: 1px solid var(--border-bright);
+      color: var(--text-dim);
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      padding: 10px 14px;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .share-switch-btn:hover { border-color: var(--accent); color: var(--text); }
+    .share-switch-btn.active { border-color: var(--accent); color: var(--text-bright); background: rgba(255,77,0,0.08); }
+    .share-switch-btn .sdot { width: 6px; height: 6px; border-radius: 50%; background: var(--border-bright); flex-shrink: 0; transition: background 0.2s; }
+    .share-switch-btn.active .sdot { background: var(--accent); box-shadow: 0 0 8px rgba(255,77,0,0.6); }
+
+    .share-ratio-switcher { display: flex; gap: 6px; }
+
+    .share-ratio-btn {
+      background: var(--bg);
+      border: 1px solid var(--border-bright);
+      color: var(--text-dim);
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      padding: 8px 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      flex: 1;
+    }
+    .share-ratio-btn:hover { border-color: var(--accent); color: var(--text); }
+    .share-ratio-btn.active { border-color: var(--accent); color: var(--text-bright); background: rgba(255,77,0,0.08); }
+    .share-ratio-icon { border: 1.5px solid currentColor; opacity: 0.6; }
+    .share-ratio-icon.sq { width: 18px; height: 18px; }
+    .share-ratio-icon.pt { width: 14px; height: 18px; }
+    .share-ratio-icon.st { width: 10px; height: 18px; }
+
+    .share-download-btn {
+      background: var(--accent);
+      border: none;
+      color: #fff;
+      font-family: var(--display);
+      font-size: 18px;
+      letter-spacing: 0.1em;
+      padding: 14px;
+      cursor: pointer;
+      transition: background 0.15s;
+      margin-top: auto;
+    }
+    .share-download-btn:hover { background: #ff6620; }
+
+    .share-divider { width: 1px; background: var(--border); flex-shrink: 0; }
+
+    .share-preview-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .share-preview-label {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      align-self: flex-start;
+    }
+
+    .share-canvas-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      width: 100%;
+    }
+
+    canvas#shareCard {
+      max-width: 100%;
+      max-height: 400px;
+      box-shadow: 0 0 40px rgba(0,0,0,0.6);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Fire bubbles canvas -->
+  <canvas id="fire-canvas"></canvas>
+
+  <!-- Scroll blur overlay -->
+  <div class="scroll-fade"></div>
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-logo">
+      <div class="nav-sparks"><span></span><span></span><span></span><span></span><span></span></div>
+      <div class="nav-logo-name">ANVIL</div>
+      <span class="nav-logo-tagline">Forged in Satire</span>
+    </div>
+    <ul class="nav-links">
+      <li><a href="#">Tools</a></li>
+      <li><a href="#">Leaderboard</a></li>
+      <li><a href="#">About</a></li>
+    </ul>
+  </nav>
+
+  <!-- HUD -->
+  <div class="hud">
+    <div class="hud-block hud-level">
+      <div class="hud-label">Rank</div>
+      <div class="hud-value" id="levelLabel">LVL 1</div>
+    </div>
+    <div class="hud-block hud-streak">
+      <div class="hud-label">Streak</div>
+      <div class="hud-value"><span id="hudStreak">0</span><span class="hud-streak-fire" id="streakFire">🔥</span></div>
+    </div>
+    <div class="hud-block hud-uses">
+      <div class="hud-label">Tools Used</div>
+      <div class="hud-value" id="hudUses">0</div>
+    </div>
+    <div class="hud-block hud-xp">
+      <div class="hud-label">Total XP</div>
+      <div class="hud-value" id="hudXP">0</div>
+    </div>
+    <div class="hud-xp-block">
+      <div class="hud-xp-top">
+        <span class="hud-xp-label">Progress to next level</span>
+        <span class="hud-xp-points" id="xpPoints">0 / 100 XP</span>
+      </div>
+      <div class="hud-xp-track">
+        <div class="hud-xp-fill" id="xpFill"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Level Up Banner -->
+  <div class="levelup-banner" id="levelupBanner">
+    <div class="levelup-title">⚡ LEVEL UP!</div>
+    <div class="levelup-sub" id="levelupSub">// you are now a TINKERER</div>
+  </div>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-eyebrow">Built different. Roasted fresh.</div>
+    <div class="hero-heading-block">
+      <div class="hero-sparks"><span></span><span></span><span></span><span></span><span></span></div>
+      <h1>ANVIL</h1>
+      <span class="hero-tagline">Forged in Satire</span>
+    </div>
+    <p class="hero-sub">AI-powered tools that are actually useful — wrapped in enough sass to make you question your life choices.</p>
+    <div class="hero-stats">
+      <div class="stat stat-uses">
+        <span class="stat-num" id="statUses">0</span>
+        <span class="stat-label">Tools Used</span>
+      </div>
+      <div class="stat stat-streak">
+        <span class="stat-num"><span id="statStreak">0</span><span class="fire-animated">🔥</span></span>
+        <span class="stat-label">Day Streak</span>
+      </div>
+      <div class="stat stat-xp">
+        <span class="stat-num" id="statXP">0</span>
+        <span class="stat-label">Total XP</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- TOOLS -->
+  <section class="tools-section">
+    <div class="section-label">Choose your weapon</div>
+    <div class="tools-grid">
+
+      <!-- Salary Roaster -->
+      <div class="tool-card card-roaster" onclick="openModal('roaster')">
+        <div class="tool-number">01</div>
+        <div class="tool-icon">🔥</div>
+        <div class="tool-name">SALARY ROASTER</div>
+        <p class="tool-desc">Enter your salary, city, age and field. We'll tell you exactly how cooked you are — financially speaking.</p>
+        <span class="tool-tag">Roast Me</span>
+        <div class="tool-xp">+25 XP per roast</div>
+      </div>
+
+      <!-- Idea Checker -->
+      <div class="tool-card card-idea" onclick="openModal('idea')">
+        <div class="tool-number">02</div>
+        <div class="tool-icon">💡</div>
+        <div class="tool-name">IDEA CHECKER</div>
+        <p class="tool-desc">Think you've got a million dollar idea? Let's find out if someone already built it, and if yours is actually better.</p>
+        <span class="tool-tag">Validate</span>
+        <div class="tool-xp">+30 XP per check</div>
+      </div>
+
+      <!-- Tech Stack Picker -->
+      <div class="tool-card card-stack" onclick="openModal('stack')">
+        <div class="tool-number">03</div>
+        <div class="tool-icon">⚙️</div>
+        <div class="tool-name">STACK PICKER</div>
+        <p class="tool-desc">Answer a few questions about your project and we'll tell you exactly what tech to use — no more analysis paralysis.</p>
+        <span class="tool-tag">Pick My Stack</span>
+        <div class="tool-xp">+20 XP per pick</div>
+      </div>
+
+      <!-- Resume Roaster -->
+      <div class="tool-card card-resume" onclick="openModal('resume')">
+        <div class="tool-number">04</div>
+        <div class="tool-icon">📄</div>
+        <div class="tool-name">RESUME ROASTER</div>
+        <p class="tool-desc">Paste your resume or fill in your details. We'll fix your grammar, sharpen your bullets, and roast every mediocre line — in your favourite comic's style.</p>
+        <span class="tool-tag">Roast My CV</span>
+        <div class="tool-xp">+35 XP per roast</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- MODALS -->
+
+  <!-- Salary Roaster Modal -->
+  <div class="modal-overlay" id="modal-roaster">
+    <div class="modal modal-wide modal-roaster">
+      <button class="modal-close" onclick="closeModal('roaster')">✕</button>
+      <div class="modal-title">SALARY ROASTER</div>
+      <div class="modal-sub">// enter your details. brace yourself.</div>
+      <div class="modal-columns">
+        <!-- Left: Inputs -->
+        <div class="modal-left">
+          <div class="field">
+            <label>Monthly Salary (₹)</label>
+            <input type="number" id="roaster-salary" placeholder="e.g. 50000"/>
+          </div>
+          <div class="fields-row">
+            <div class="field">
+              <label>City</label>
+              <input type="text" id="roaster-city" placeholder="e.g. Bangalore"/>
+            </div>
+            <div class="field">
+              <label>Age</label>
+              <input type="number" id="roaster-age" placeholder="e.g. 24"/>
+            </div>
+          </div>
+          <div class="field">
+            <label>Field / Industry</label>
+            <input type="text" id="roaster-field" placeholder="e.g. Software Engineer"/>
+          </div>
+          <div class="field">
+            <label>Roast Style</label>
+            <select id="roaster-comic">
+              {% for comic in comic_options %}
+                <option value="{{ comic.id }}">{{ comic.name }} — {{ comic.vibe }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <button class="submit-btn" onclick="submitRoaster()">ROAST ME 🔥</button>
+        </div>
+
+        <!-- Right: Output -->
+        <div class="modal-right">
+          <div class="verdict-panel" id="verdict-panel">
+            <div class="verdict-waiting" id="verdict-waiting">
+              <div class="verdict-icon">⚡</div>
+              <div class="verdict-placeholder">// awaiting verdict...</div>
+              <div class="verdict-hint">Fill in your details and hit Roast Me</div>
+            </div>
+            <div class="verdict-result" id="verdict-result" style="display:none">
+              <div class="result-label">// the verdict</div>
+              <div id="roaster-text"></div>
+              <div class="xp-toast" id="roaster-xp"></div>
+              <button class="share-btn" id="roaster-share-btn" onclick="openSharePanel('roaster')">⬡ SHARE RESULT</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Idea Checker Modal -->
+  <div class="modal-overlay" id="modal-idea">
+    <div class="modal modal-wide modal-idea">
+      <button class="modal-close" onclick="closeModal('idea')">✕</button>
+      <div class="modal-title">IDEA CHECKER</div>
+      <div class="modal-sub">// how original are you, really?</div>
+      <div class="modal-columns">
+        <div class="modal-left">
+          <div class="field">
+            <label>Your Idea</label>
+            <input type="text" id="idea-input" placeholder="e.g. An app that delivers repair services instantly"/>
+          </div>
+          <div class="field">
+            <label>Target Market</label>
+            <input type="text" id="idea-market" placeholder="e.g. Indian urban millennials"/>
+          </div>
+          <button class="submit-btn" onclick="submitIdea()">CHECK MY IDEA 💡</button>
+        </div>
+        <div class="modal-right">
+          <div class="verdict-panel">
+            <div class="verdict-waiting" id="idea-verdict-waiting">
+              <div class="verdict-icon">💡</div>
+              <div class="verdict-placeholder">// awaiting analysis...</div>
+              <div class="verdict-hint">Describe your idea and hit Check</div>
+            </div>
+            <div class="verdict-result" id="idea-verdict-result" style="display:none">
+              <div class="result-label">// the analysis</div>
+              <div id="idea-text"></div>
+              <div class="xp-toast" id="idea-xp"></div>
+              <button class="share-btn" id="idea-share-btn" onclick="openSharePanel('idea')">⬡ SHARE RESULT</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stack Picker Modal -->
+  <div class="modal-overlay" id="modal-stack">
+    <div class="modal modal-wide modal-stack">
+      <button class="modal-close" onclick="closeModal('stack')">✕</button>
+      <div class="modal-title">STACK PICKER</div>
+      <div class="modal-sub">// no more analysis paralysis</div>
+      <div class="modal-columns">
+        <div class="modal-left">
+          <div class="field">
+            <label>What are you building?</label>
+            <input type="text" id="stack-project" placeholder="e.g. A social media app for pet owners"/>
+          </div>
+          <div class="fields-row">
+            <div class="field">
+              <label>Your Experience Level</label>
+              <select id="stack-level">
+                <option value="beginner">Beginner</option>
+                <option value="intermediate">Intermediate</option>
+                <option value="advanced">Advanced</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Priority</label>
+              <select id="stack-priority">
+                <option value="speed">Ship Fast</option>
+                <option value="scale">Scale Big</option>
+                <option value="learn">Learn Most</option>
+              </select>
+            </div>
+          </div>
+          <button class="submit-btn" onclick="submitStack()">PICK MY STACK ⚙️</button>
+        </div>
+        <div class="modal-right">
+          <div class="verdict-panel">
+            <div class="verdict-waiting" id="stack-verdict-waiting">
+              <div class="verdict-icon">⚙️</div>
+              <div class="verdict-placeholder">// awaiting recommendation...</div>
+              <div class="verdict-hint">Describe your project and hit Pick My Stack</div>
+            </div>
+            <div class="verdict-result" id="stack-verdict-result" style="display:none">
+              <div class="result-label">// your stack</div>
+              <div id="stack-text"></div>
+              <div class="xp-toast" id="stack-xp"></div>
+              <button class="share-btn" id="stack-share-btn" onclick="openSharePanel('stack')">⬡ SHARE RESULT</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Resume Roaster Modal -->
+  <div class="modal-overlay" id="modal-resume">
+    <div class="modal modal-wide modal-resume">
+      <button class="modal-close" onclick="closeModal('resume')">✕</button>
+      <div class="modal-title">RESUME ROASTER</div>
+      <div class="modal-sub">// we'll fix it. but we won't be nice about it.</div>
+      <div class="modal-columns">
+        <!-- Left: Inputs -->
+        <div class="modal-left">
+          <div class="mode-toggle">
+            <button class="mode-btn active" id="btn-paste" onclick="switchResumeMode('paste')">Paste Resume</button>
+            <button class="mode-btn" id="btn-form" onclick="switchResumeMode('form')">Fill Form</button>
+          </div>
+
+          <!-- Paste mode -->
+          <div class="input-mode active" id="resume-mode-paste">
+            <div class="field">
+              <label>Your Resume Text</label>
+              <textarea id="resume-text" placeholder="Paste your full resume here — skills, experience, education, the works..."></textarea>
+            </div>
+          </div>
+
+          <!-- Form mode -->
+          <div class="input-mode" id="resume-mode-form">
+            <div class="field">
+              <label>Full Name & Job Title</label>
+              <input type="text" id="form-name" placeholder="e.g. Pushkar Gupta — Backend Developer"/>
+            </div>
+            <div class="field">
+              <label>Work Experience</label>
+              <textarea id="form-experience" placeholder="e.g. 2 years at XYZ as intern, built a Flask app..." style="min-height: 80px;"></textarea>
+            </div>
+            <div class="fields-row">
+              <div class="field">
+                <label>Skills</label>
+                <input type="text" id="form-skills" placeholder="e.g. Python, Flask, SQL"/>
+              </div>
+              <div class="field">
+                <label>Education</label>
+                <input type="text" id="form-education" placeholder="e.g. B.Tech CSE, PTU"/>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Roast Style</label>
+            <select id="resume-comic">
+              {% for comic in comic_options %}
+                <option value="{{ comic.id }}">{{ comic.name }} — {{ comic.vibe }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <button class="submit-btn" onclick="submitResume(this)">ROAST MY RESUME 📄</button>
+        </div>
+
+        <!-- Right: Output -->
+        <div class="modal-right">
+          <div class="verdict-panel" style="min-height: 380px;">
+            <div class="verdict-waiting" id="resume-verdict-waiting">
+              <div class="verdict-icon">📄</div>
+              <div class="verdict-placeholder">// awaiting your resume...</div>
+              <div class="verdict-hint">Paste or fill your details and hit Roast</div>
+            </div>
+            <div class="verdict-split" id="resume-verdict-result" style="display:none;">
+              <div class="verdict-half">
+                <div class="verdict-half-label roast-label">// the roast</div>
+                <div class="verdict-half-text" id="resume-roast-text"></div>
+              </div>
+              <div class="verdict-half">
+                <div class="verdict-half-label fix-label">// fixed version</div>
+                <div class="verdict-half-text" id="resume-fixed-text"></div>
+              </div>
+              <div class="xp-toast" id="resume-xp" style="padding: 12px 24px; border-top: 1px solid var(--border);"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── Gamification ──
+    let xp = parseInt(localStorage.getItem('fis_xp') || '0');
+    let uses = parseInt(localStorage.getItem('fis_uses') || '0');
+    let streak = parseInt(localStorage.getItem('fis_streak') || '0');
+
+    const LEVELS = [
+      { name: 'NEWBIE', max: 100 },
+      { name: 'TINKERER', max: 250 },
+      { name: 'BUILDER', max: 500 },
+      { name: 'HACKER', max: 900 },
+      { name: 'WIZARD', max: Infinity }
+    ];
+
+    function getCurrentLevel() {
+      let total = 0;
+      for (let i = 0; i < LEVELS.length; i++) {
+        if (xp < total + LEVELS[i].max) return { idx: i, name: LEVELS[i].name, earned: xp - total, max: LEVELS[i].max };
+        total += LEVELS[i].max;
+      }
+      return { idx: LEVELS.length - 1, name: 'WIZARD', earned: 999, max: 999 };
+    }
+
+    function updateUI() {
+      const lvl = getCurrentLevel();
+      const pct = Math.min(100, (lvl.earned / lvl.max) * 100);
+      document.getElementById('xpFill').style.width = pct + '%';
+      document.getElementById('levelLabel').textContent = `LVL ${lvl.idx + 1} — ${lvl.name}`;
+      document.getElementById('xpPoints').textContent = `${lvl.earned} / ${lvl.max} XP`;
+
+      // HUD
+      document.getElementById('hudXP').textContent = xp;
+      document.getElementById('hudUses').textContent = uses;
+      document.getElementById('hudStreak').textContent = streak;
+
+      // Streak fire intensity
+      const fireEl = document.getElementById('streakFire');
+      if (streak >= 7) fireEl.textContent = '🔥🔥🔥';
+      else if (streak >= 3) fireEl.textContent = '🔥🔥';
+      else fireEl.textContent = '🔥';
+
+      // Hero stats
+      document.getElementById('statXP').textContent = xp;
+      document.getElementById('statUses').textContent = uses;
+      document.getElementById('statStreak').textContent = streak;
+    }
+
+    function showXPFloat(amount, el) {
+      const rect = el.getBoundingClientRect();
+      const float = document.createElement('div');
+      float.className = 'xp-float';
+      float.textContent = `+${amount} XP`;
+      float.style.left = rect.left + rect.width / 2 + 'px';
+      float.style.top = rect.top + window.scrollY - 10 + 'px';
+      document.body.appendChild(float);
+      setTimeout(() => float.remove(), 1300);
+    }
+
+    function showLevelUp(levelName) {
+      const banner = document.getElementById('levelupBanner');
+      document.getElementById('levelupSub').textContent = `// you are now a ${levelName}`;
+      banner.classList.add('show');
+      setTimeout(() => banner.classList.remove('show'), 3000);
+    }
+
+    function addXP(amount, triggerEl) {
+      const prevLevel = getCurrentLevel().idx;
+      xp += amount;
+      uses += 1;
+      localStorage.setItem('fis_xp', xp);
+      localStorage.setItem('fis_uses', uses);
+      const newLevel = getCurrentLevel();
+      updateUI();
+      if (triggerEl) showXPFloat(amount, triggerEl);
+      if (newLevel.idx > prevLevel) showLevelUp(newLevel.name);
+      return amount;
+    }
+
+    // Streak logic
+    const today = new Date().toDateString();
+    const lastVisit = localStorage.getItem('fis_last_visit');
+    const yesterday = new Date(Date.now() - 86400000).toDateString();
+    if (lastVisit === yesterday) { streak += 1; }
+    else if (lastVisit !== today) { streak = 1; }
+    localStorage.setItem('fis_last_visit', today);
+    localStorage.setItem('fis_streak', streak);
+
+    updateUI();
+
+    // ── Fire Bubbles ──
+    (function() {
+      const canvas = document.getElementById('fire-canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      function createBubble() {
+        const r = Math.random() * 5 + 1.5;
+        return {
+          x: Math.random() * canvas.width,
+          y: -r * 2,
+          r,
+          speed: Math.random() * 0.8 + 0.3,
+          wobble: Math.random() * Math.PI * 2,
+          wobbleSpeed: Math.random() * 0.025 + 0.008,
+          wobbleAmp: Math.random() * 1.5 + 0.5,
+          opacity: Math.random() * 0.5 + 0.2,
+          hue: Math.random() * 25 + 5,
+          life: 1,
+          decay: Math.random() * 0.003 + 0.001,
+        };
+      }
+
+      let bubbles = Array.from({ length: 70 }, () => {
+        const b = createBubble();
+        b.y = Math.random() * canvas.height;
+        b.life = Math.random();
+        return b;
+      });
+
+      function drawBubble(b) {
+        const alpha = b.opacity * b.life;
+        const glow = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r * 4);
+        glow.addColorStop(0, `hsla(${b.hue}, 100%, 65%, ${alpha * 0.6})`);
+        glow.addColorStop(0.5, `hsla(${b.hue}, 100%, 50%, ${alpha * 0.2})`);
+        glow.addColorStop(1, `hsla(${b.hue}, 100%, 40%, 0)`);
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.r * 4, 0, Math.PI * 2);
+        ctx.fillStyle = glow;
+        ctx.fill();
+
+        const core = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r);
+        core.addColorStop(0, `hsla(${b.hue + 30}, 100%, 90%, ${alpha})`);
+        core.addColorStop(1, `hsla(${b.hue}, 100%, 60%, ${alpha * 0.5})`);
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+        ctx.fillStyle = core;
+        ctx.fill();
+      }
+
+      function drawFrame() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        bubbles.forEach((b, i) => {
+          b.wobble += b.wobbleSpeed;
+          b.x += Math.sin(b.wobble) * b.wobbleAmp;
+          b.y += b.speed;
+          b.life -= b.decay;
+          if (b.y > canvas.height + b.r * 2 || b.life <= 0) {
+            bubbles[i] = createBubble();
+            return;
+          }
+          drawBubble(b);
+        });
+        requestAnimationFrame(drawFrame);
+      }
+
+      drawFrame();
+      window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      });
+    })();
+
+    // ── Scroll blur intensity ──
+    const scrollFade = document.querySelector('.scroll-fade');
+    window.addEventListener('scroll', () => {
+      const scrollY = window.scrollY;
+      const intensity = Math.min(scrollY / 300, 1);
+      scrollFade.style.opacity = 0.4 + intensity * 0.6;
+    });
+
+    // ── Modals ──
+    function openModal(id) {
+      document.getElementById(`modal-${id}`).classList.add('active');
+    }
+
+    function closeModal(id) {
+      document.getElementById(`modal-${id}`).classList.remove('active');
+    }
+
+    // Close on overlay click
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+      overlay.addEventListener('click', e => {
+        if (e.target === overlay) overlay.classList.remove('active');
+      });
+    });
+
+    // ── API Calls ──
+    async function callAPI(endpoint, body) {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      return res.json();
+    }
+
+    function setLoading(btn, loading) {
+      btn.disabled = loading;
+      btn.innerHTML = loading ? '<span class="spinner"></span> THINKING...' : btn.dataset.label;
+    }
+
+    async function submitRoaster() {
+      const btn = document.querySelector('#modal-roaster .submit-btn');
+      btn.dataset.label = 'ROAST ME 🔥';
+      const salary = document.getElementById('roaster-salary').value;
+      const city = document.getElementById('roaster-city').value;
+      const age = document.getElementById('roaster-age').value;
+      const field = document.getElementById('roaster-field').value;
+      const comic = document.getElementById('roaster-comic').value;
+      if (!salary || !city || !age || !field) return alert('Fill in all fields!');
+      setLoading(btn, true);
+      const data = await callAPI('/api/roast', { salary, city, age, field, comic });
+      setLoading(btn, false);
+      document.getElementById('verdict-waiting').style.display = 'none';
+      document.getElementById('verdict-result').style.display = 'block';
+      document.getElementById('roaster-text').innerText = data.message;
+      const earned = addXP(25);
+      document.getElementById('roaster-xp').innerText = `+${earned} XP earned!`;
+      document.getElementById('roaster-share-btn').classList.add('visible');
+    }
+
+    async function submitIdea() {
+      const btn = document.querySelector('#modal-idea .submit-btn');
+      btn.dataset.label = 'CHECK MY IDEA 💡';
+      const idea = document.getElementById('idea-input').value;
+      const market = document.getElementById('idea-market').value;
+      if (!idea || !market) return alert('Fill in all fields!');
+      setLoading(btn, true);
+      const data = await callAPI('/api/idea', { idea, market });
+      setLoading(btn, false);
+      document.getElementById('idea-verdict-waiting').style.display = 'none';
+      document.getElementById('idea-verdict-result').style.display = 'block';
+      document.getElementById('idea-text').innerText = data.message;
+      const earned = addXP(30);
+      document.getElementById('idea-xp').innerText = `+${earned} XP earned!`;
+      document.getElementById('idea-share-btn').classList.add('visible');
+    }
+
+    async function submitStack() {
+      const btn = document.querySelector('#modal-stack .submit-btn');
+      btn.dataset.label = 'PICK MY STACK ⚙️';
+      const project = document.getElementById('stack-project').value;
+      const level = document.getElementById('stack-level').value;
+      const priority = document.getElementById('stack-priority').value;
+      if (!project) return alert('Describe your project!');
+      setLoading(btn, true);
+      const data = await callAPI('/api/stack', { project, level, priority });
+      setLoading(btn, false);
+      document.getElementById('stack-verdict-waiting').style.display = 'none';
+      document.getElementById('stack-verdict-result').style.display = 'block';
+      document.getElementById('stack-text').innerText = data.message;
+      const earned = addXP(20);
+      document.getElementById('stack-xp').innerText = `+${earned} XP earned!`;
+      document.getElementById('stack-share-btn').classList.add('visible');
+    }
+
+    function switchResumeMode(mode) {
+      document.getElementById('resume-mode-paste').classList.toggle('active', mode === 'paste');
+      document.getElementById('resume-mode-form').classList.toggle('active', mode === 'form');
+      document.getElementById('btn-paste').classList.toggle('active', mode === 'paste');
+      document.getElementById('btn-form').classList.toggle('active', mode === 'form');
+    }
+
+    async function submitResume(btn) {
+      const isPaste = document.getElementById('resume-mode-paste').classList.contains('active');
+      const comic = document.getElementById('resume-comic').value;
+      let body = { comic, mode: isPaste ? 'paste' : 'form' };
+
+      if (isPaste) {
+        const text = document.getElementById('resume-text').value.trim();
+        if (!text) return alert('Paste your resume first!');
+        body.resume_text = text;
+      } else {
+        const name = document.getElementById('form-name').value.trim();
+        if (!name) return alert('Fill in at least your name!');
+        body.name = name;
+        body.experience = document.getElementById('form-experience').value;
+        body.skills = document.getElementById('form-skills').value;
+        body.education = document.getElementById('form-education').value;
+      }
+
+      btn.dataset.label = 'ROAST MY RESUME 📄';
+      setLoading(btn, true);
+      const data = await callAPI('/api/resume', body);
+      setLoading(btn, false);
+
+      // Parse [ROAST] and [FIXED] sections from response
+      const raw = data.message || '';
+      const roastMatch = raw.match(/\[ROAST\]([\s\S]*?)(?=\[FIXED\]|$)/i);
+      const fixedMatch = raw.match(/\[FIXED\]([\s\S]*?)$/i);
+      const roastText = roastMatch ? roastMatch[1].trim() : raw;
+      const fixedText = fixedMatch ? fixedMatch[1].trim() : '(No fixed version returned — try again)';
+
+      document.getElementById('resume-verdict-waiting').style.display = 'none';
+      document.getElementById('resume-verdict-result').style.display = 'flex';
+      document.getElementById('resume-roast-text').innerText = roastText;
+      document.getElementById('resume-fixed-text').innerText = fixedText;
+      const earned = addXP(35);
+      document.getElementById('resume-xp').innerText = `+${earned} XP earned!`;
+      showXPFloat(earned, btn);
+    }
+
+    // ── Share Card ──
+    let shareTemplate = 'halftone';
+    let shareRatio = '1:1';
+    let shareData = {};
+
+    const SHARE_RATIOS = {
+      '1:1': { w: 600, h: 600 },
+      '4:5': { w: 600, h: 750 },
+      '9:16': { w: 600, h: 1067 },
+    };
+
+    const TOOL_META = {
+      roaster: { name: 'SALARY ROASTER', icon: '🔥', color: '#ff4d00' },
+      idea:    { name: 'IDEA CHECKER',   icon: '💡', color: '#00a8ff' },
+      stack:   { name: 'STACK PICKER',   icon: '⚙️', color: '#00e676' },
+      resume:  { name: 'RESUME ROASTER', icon: '📄', color: '#a855f7' },
+    };
+
+    function openSharePanel(tool) {
+      const textEl = document.getElementById(tool === 'roaster' ? 'roaster-text' : tool + '-text');
+      const comic = tool === 'roaster' ? document.getElementById('roaster-comic')?.options[document.getElementById('roaster-comic')?.selectedIndex]?.text : '';
+      const lvl = getCurrentLevel();
+      shareData = {
+        tool,
+        text: textEl ? textEl.innerText : '',
+        comic: comic || '',
+        color: TOOL_META[tool].color,
+        toolName: TOOL_META[tool].name,
+        icon: TOOL_META[tool].icon,
+        level: `LVL ${lvl.idx + 1} — ${lvl.name}`,
+        xp: xp + ' XP',
+      };
+      document.getElementById('shareOverlay').classList.add('active');
+      document.body.style.overflow = 'hidden';
+      renderShareCard();
+    }
+
+    function closeSharePanel() {
+      document.getElementById('shareOverlay').classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    function setShareTemplate(t) {
+      shareTemplate = t;
+      document.querySelectorAll('.share-switch-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('tmpl-' + t).classList.add('active');
+      renderShareCard();
+    }
+
+    function setShareRatio(r) {
+      shareRatio = r;
+      document.querySelectorAll('.share-ratio-btn').forEach(b => b.classList.remove('active'));
+      const map = {'1:1':'ratio-1','4:5':'ratio-2','9:16':'ratio-3'};
+      document.getElementById(map[r]).classList.add('active');
+      renderShareCard();
+    }
+
+    function renderShareCard() {
+      const canvas = document.getElementById('shareCard');
+      const { w, h } = SHARE_RATIOS[shareRatio];
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      if (shareTemplate === 'halftone') drawShareHalftone(ctx, w, h);
+      else drawShareMesh(ctx, w, h);
+    }
+
+    function drawShareHalftone(ctx, w, h) {
+      ctx.fillStyle = '#0a0a0a';
+      ctx.fillRect(0, 0, w, h);
+
+      // Halftone dots — fade from center
+      const dotSpacing = 22;
+      const maxR = 5;
+      const centerX = w * 0.5;
+      const centerY = h * 0.5;
+      const maxDist = Math.sqrt(w * w + h * h) * 0.32;
+      for (let x = 0; x < w + dotSpacing; x += dotSpacing) {
+        for (let y = 0; y < h + dotSpacing; y += dotSpacing) {
+          const dist = Math.sqrt((x-centerX)**2 + (y-centerY)**2);
+          const t = Math.min(dist / maxDist, 1);
+          const fade = t * t;
+          const r = maxR * t * 1.2;
+          const opacity = fade * 0.18;
+          if (r > 0.3 && opacity > 0.01) {
+            ctx.beginPath();
+            ctx.arc(x, y, Math.min(r, maxR), 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255,77,0,${opacity})`;
+            ctx.fill();
+          }
+        }
+      }
+
+      // Top accent bar
+      ctx.fillStyle = shareData.color;
+      ctx.fillRect(0, 0, w, 6);
+
+      const pad = w * 0.1;
+      const topY = h * 0.12;
+
+      // Tool label (left)
+      ctx.font = `${w * 0.035}px 'DM Mono', monospace`;
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      ctx.fillText('// ' + shareData.toolName, pad, topY);
+
+      // XP + Level badge (right side of header)
+      ctx.textAlign = 'right';
+      ctx.font = `bold ${w * 0.036}px 'Bebas Neue', sans-serif`;
+      ctx.fillStyle = '#ffcc00';
+      ctx.fillText('⚡ ' + shareData.level, w - pad, topY);
+      ctx.font = `${w * 0.024}px 'DM Mono', monospace`;
+      ctx.fillStyle = 'rgba(255,204,0,0.55)';
+      ctx.fillText(shareData.xp, w - pad, topY + w * 0.038);
+      ctx.textAlign = 'left';
+
+      // Icon
+      ctx.font = `${w * 0.07}px Arial`;
+      ctx.fillText(shareData.icon, pad, topY + w * 0.1);
+
+      // Comic style
+      if (shareData.comic) {
+        ctx.font = `500 ${w * 0.03}px 'DM Sans', sans-serif`;
+        ctx.fillStyle = shareData.color;
+        ctx.fillText(shareData.comic, pad + w * 0.1, topY + w * 0.082);
+      }
+
+      // Divider
+      const lineY = topY + w * 0.13;
+      ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(pad, lineY);
+      ctx.lineTo(w - pad, lineY);
+      ctx.stroke();
+
+      // Result text — bounded region
+      const bottomY = h - h * 0.1;
+      const textY = lineY + h * 0.07;
+      const fontSize = Math.min(w * 0.042, h * 0.028);
+      const textMaxY = bottomY - h * 0.06;
+      ctx.font = `300 ${fontSize}px 'DM Sans', sans-serif`;
+      ctx.fillStyle = '#e0e0e0';
+      wrapShareText(ctx, shareData.text, pad, textY, w - pad * 2, fontSize * 1.8, textMaxY);
+
+      // Watermark only at bottom
+      ctx.font = `${w * 0.048}px 'Bebas Neue', sans-serif`;
+      ctx.fillStyle = 'rgba(255,255,255,0.28)';
+      ctx.textAlign = 'right';
+      ctx.fillText('ANVIL', w - pad, bottomY + h * 0.035);
+      ctx.textAlign = 'left';
+
+      // Bottom accent
+      ctx.fillStyle = shareData.color;
+      ctx.fillRect(0, h - 4, w, 4);
+    }
+
+    function drawShareMesh(ctx, w, h) {
+      ctx.fillStyle = '#080808';
+      ctx.fillRect(0, 0, w, h);
+
+      const blobs = [
+        { x: w*0.2, y: h*0.2, r: w*0.55, c: 'rgba(255,77,0,0.12)' },
+        { x: w*0.8, y: h*0.5, r: w*0.45, c: 'rgba(255,100,20,0.08)' },
+        { x: w*0.3, y: h*0.8, r: w*0.5,  c: 'rgba(255,60,0,0.1)' },
+        { x: w*0.7, y: h*0.15,r: w*0.3,  c: 'rgba(255,180,0,0.06)' },
+      ];
+      blobs.forEach(b => {
+        const grad = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r);
+        grad.addColorStop(0, b.c);
+        grad.addColorStop(1, 'transparent');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, w, h);
+      });
+
+      ctx.strokeStyle = 'rgba(255,77,0,0.05)';
+      ctx.lineWidth = 0.5;
+      for (let x = 0; x < w; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke(); }
+      for (let y = 0; y < h; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+
+      const cp = w*0.08, cx = cp, cy = h*0.08, cw = w-cp*2, ch = h-h*0.16;
+      ctx.fillStyle = 'rgba(255,255,255,0.03)';
+      shareRoundRect(ctx, cx, cy, cw, ch, 12); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,77,0,0.25)'; ctx.lineWidth = 1;
+      shareRoundRect(ctx, cx, cy, cw, ch, 12); ctx.stroke();
+      ctx.fillStyle = shareData.color;
+      shareRoundRect(ctx, cx, cy, cw, 3, [12,12,0,0]); ctx.fill();
+
+      const pad = cx + cw*0.1;
+      const topY = cy + ch*0.12;
+
+      // Tool label (left)
+      ctx.font = `${w*0.033}px 'DM Mono', monospace`;
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.fillText('// ' + shareData.toolName, pad, topY);
+
+      // XP + Level badge (right side of header)
+      const badgeX = cx + cw - cw*0.1;
+      ctx.textAlign = 'right';
+      ctx.font = `bold ${w*0.036}px 'Bebas Neue', sans-serif`;
+      ctx.fillStyle = '#ffcc00';
+      ctx.fillText('⚡ ' + shareData.level, badgeX, topY);
+      ctx.font = `${w*0.024}px 'DM Mono', monospace`;
+      ctx.fillStyle = 'rgba(255,204,0,0.55)';
+      ctx.fillText(shareData.xp, badgeX, topY + w*0.038);
+      ctx.textAlign = 'left';
+
+      // Icon + comic
+      ctx.font = `${w*0.07}px Arial`;
+      ctx.fillText(shareData.icon, pad, topY + w*0.1);
+
+      if (shareData.comic) {
+        ctx.font = `500 ${w*0.03}px 'DM Sans', sans-serif`;
+        ctx.fillStyle = shareData.color;
+        ctx.fillText(shareData.comic, pad + w*0.1, topY + w*0.082);
+      }
+
+      // Divider
+      const lineY = topY + w*0.13;
+      ctx.strokeStyle = 'rgba(255,77,0,0.2)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(pad, lineY); ctx.lineTo(cx+cw-cw*0.1, lineY); ctx.stroke();
+
+      // Result text — bounded region
+      const bottomY = cy + ch - ch*0.08;
+      const textMaxY = bottomY - ch*0.08;
+      const fontSize = Math.min(w*0.04, h*0.026);
+      ctx.font = `300 ${fontSize}px 'DM Sans', sans-serif`;
+      ctx.fillStyle = '#d0d0d0';
+      wrapShareText(ctx, shareData.text, pad, lineY + ch*0.07, cw*0.8, fontSize*1.85, textMaxY);
+
+      // Watermark bottom right only
+      ctx.font = `${w*0.044}px 'Bebas Neue', sans-serif`;
+      ctx.fillStyle = 'rgba(255,255,255,0.28)';
+      ctx.textAlign = 'right';
+      ctx.fillText('ANVIL', cx+cw-cw*0.1, bottomY + ch*0.03);
+      ctx.textAlign = 'left';
+    }
+
+    function wrapShareText(ctx, text, x, y, maxWidth, lineHeight, maxY) {
+      if (!text) return;
+      const words = text.split(' ');
+      let line = '', curY = y;
+      const ellipsis = '...';
+      for (let i = 0; i < words.length; i++) {
+        const test = line + words[i] + ' ';
+        if (ctx.measureText(test).width > maxWidth && i > 0) {
+          // Check if next line would exceed maxY
+          if (maxY && curY + lineHeight > maxY) {
+            // Truncate current line with ellipsis
+            while (ctx.measureText(line + ellipsis).width > maxWidth && line.length > 0) {
+              line = line.slice(0, -1);
+            }
+            ctx.fillText(line.trim() + ellipsis, x, curY);
+            return;
+          }
+          ctx.fillText(line, x, curY);
+          line = words[i] + ' ';
+          curY += lineHeight;
+        } else { line = test; }
+      }
+      // Final line — truncate if needed
+      if (maxY && curY > maxY) return;
+      if (ctx.measureText(line).width > maxWidth) {
+        while (ctx.measureText(line + ellipsis).width > maxWidth && line.length > 0) {
+          line = line.slice(0, -1);
+        }
+        ctx.fillText(line.trim() + ellipsis, x, curY);
+      } else {
+        ctx.fillText(line, x, curY);
+      }
+    }
+
+    function shareRoundRect(ctx, x, y, w, h, r) {
+      if (typeof r === 'number') r = [r,r,r,r];
+      ctx.beginPath();
+      ctx.moveTo(x+r[0], y);
+      ctx.lineTo(x+w-r[1], y); ctx.quadraticCurveTo(x+w, y, x+w, y+r[1]);
+      ctx.lineTo(x+w, y+h-r[2]); ctx.quadraticCurveTo(x+w, y+h, x+w-r[2], y+h);
+      ctx.lineTo(x+r[3], y+h); ctx.quadraticCurveTo(x, y+h, x, y+h-r[3]);
+      ctx.lineTo(x, y+r[0]); ctx.quadraticCurveTo(x, y, x+r[0], y);
+      ctx.closePath();
+    }
+
+    function downloadShareCard() {
+      const canvas = document.getElementById('shareCard');
+      const link = document.createElement('a');
+      link.download = `anvil-${shareTemplate}-${shareRatio.replace(':','-')}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    // Close share on overlay click
+    document.getElementById('shareOverlay').addEventListener('click', e => {
+      if (e.target === document.getElementById('shareOverlay')) closeSharePanel();
+    });
+  </script>
+
+  <!-- Share Overlay -->
+  <div class="share-overlay" id="shareOverlay">
+    <div class="share-panel">
+      <button class="share-close" onclick="closeSharePanel()">✕</button>
+
+      <div class="share-controls">
+        <div class="share-control-group">
+          <div class="share-control-label">Template</div>
+          <div class="share-switcher">
+            <button class="share-switch-btn active" id="tmpl-halftone" onclick="setShareTemplate('halftone')">
+              <span class="sdot"></span>HALFTONE
+            </button>
+            <button class="share-switch-btn" id="tmpl-mesh" onclick="setShareTemplate('mesh')">
+              <span class="sdot"></span>MESH
+            </button>
+          </div>
+        </div>
+
+        <div class="share-control-group">
+          <div class="share-control-label">Aspect Ratio</div>
+          <div class="share-ratio-switcher">
+            <button class="share-ratio-btn active" id="ratio-1" onclick="setShareRatio('1:1')">
+              <div class="share-ratio-icon sq"></div>1:1
+            </button>
+            <button class="share-ratio-btn" id="ratio-2" onclick="setShareRatio('4:5')">
+              <div class="share-ratio-icon pt"></div>4:5
+            </button>
+            <button class="share-ratio-btn" id="ratio-3" onclick="setShareRatio('9:16')">
+              <div class="share-ratio-icon st"></div>9:16
+            </button>
+          </div>
+        </div>
+
+        <button class="share-download-btn" onclick="downloadShareCard()">⬇ DOWNLOAD</button>
+      </div>
+
+      <div class="share-divider"></div>
+
+      <div class="share-preview-area">
+        <div class="share-preview-label">// live preview</div>
+        <div class="share-canvas-wrapper">
+          <canvas id="shareCard"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
