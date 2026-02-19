@@ -309,6 +309,49 @@
       pointer-events: all;
     }
 
+    .unlock-banner {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.85);
+      background: #0f0f0f;
+      border: 1px solid #00e676;
+      border-radius: 16px;
+      padding: 32px 48px;
+      text-align: center;
+      z-index: 9999;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s;
+      box-shadow: 0 0 60px rgba(0,230,118,0.2);
+    }
+
+    .unlock-banner.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+      pointer-events: all;
+    }
+
+    .unlock-title {
+      font-family: var(--display);
+      font-size: 48px;
+      color: #00e676;
+      letter-spacing: 0.1em;
+    }
+
+    .unlock-sub {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text-dim);
+      letter-spacing: 0.15em;
+      margin-top: 8px;
+    }
+
+    /* Locked comic options in dropdowns */
+    select option.locked-option {
+      color: #444;
+    }
+
     .levelup-title {
       font-family: var(--display);
       font-size: 48px;
@@ -1229,6 +1272,11 @@
     <div class="levelup-sub" id="levelupSub">// you are now a TINKERER</div>
   </div>
 
+  <div class="unlock-banner" id="unlockBanner">
+    <div class="unlock-title">🔓 UNLOCKED!</div>
+    <div class="unlock-sub" id="unlockSub">// Ravi Gupta is now available</div>
+  </div>
+
   <!-- HERO -->
   <section class="hero">
     <div class="hero-eyebrow">Built different. Roasted fresh.</div>
@@ -1237,7 +1285,7 @@
       <h1>ANVIL</h1>
       <span class="hero-tagline">Forged in Satire</span>
     </div>
-    <p class="hero-sub">AI-powered tools that are actually useful — wrapped in enough sass to make you question your life choices.</p>
+    <p class="hero-sub">Three AI-powered tools that are actually useful — wrapped in enough sass to make you question your life choices.</p>
     <div class="hero-stats">
       <div class="stat stat-uses">
         <span class="stat-num" id="statUses">0</span>
@@ -1334,9 +1382,13 @@
           <div class="field">
             <label>Roast Style</label>
             <select id="roaster-comic">
-              {% for comic in comic_options %}
-                <option value="{{ comic.id }}">{{ comic.name }} — {{ comic.vibe }}</option>
-              {% endfor %}
+              <option value="abhishek_upmanyu">Abhishek Upmanyu — Rapid-Fire Wit</option>
+              <option value="samay_raina">Samay Raina — Gen-Z Chess Brain</option>
+              <option value="ravi_gupta">Ravi Gupta — Deadpan Misdirection</option>
+              <option value="anubhav_bassi">Anubhav Singh Bassi — Storytelling Failure</option>
+              <option value="ashish_solanki">Ashish Solanki — Family Roast</option>
+              <option value="kaustubh_aggarwal">Kaustubh Aggarwal — Delhi Savage</option>
+              <option value="madhur_virli">Madhur Virli — Dark IIT Cynicism</option>
             </select>
           </div>
           <button class="submit-btn" onclick="submitRoaster()">ROAST ME 🔥</button>
@@ -1497,9 +1549,13 @@
           <div class="field">
             <label>Roast Style</label>
             <select id="resume-comic">
-              {% for comic in comic_options %}
-                <option value="{{ comic.id }}">{{ comic.name }} — {{ comic.vibe }}</option>
-              {% endfor %}
+              <option value="abhishek_upmanyu">Abhishek Upmanyu — Rapid-Fire Wit</option>
+              <option value="samay_raina">Samay Raina — Gen-Z Chess Brain</option>
+              <option value="ravi_gupta">Ravi Gupta — Deadpan Misdirection</option>
+              <option value="anubhav_bassi">Anubhav Singh Bassi — Storytelling Failure</option>
+              <option value="ashish_solanki">Ashish Solanki — Family Roast</option>
+              <option value="kaustubh_aggarwal">Kaustubh Aggarwal — Delhi Savage</option>
+              <option value="madhur_virli">Madhur Virli — Dark IIT Cynicism</option>
             </select>
           </div>
           <button class="submit-btn" onclick="submitResume(this)">ROAST MY RESUME 📄</button>
@@ -1619,7 +1675,71 @@
 
     updateUI();
 
-    // ── Fire Bubbles ──
+    // ── Comic Unlock System ──
+    const COMIC_UNLOCKS = [
+      { value: 'abhishek_upmanyu', name: 'Abhishek Upmanyu', xpRequired: 0 },
+      { value: 'samay_raina',      name: 'Samay Raina',      xpRequired: 0 },
+      { value: 'ravi_gupta',       name: 'Ravi Gupta',       xpRequired: 100 },
+      { value: 'anubhav_bassi',    name: 'Anubhav Singh Bassi', xpRequired: 350 },
+      { value: 'ashish_solanki',   name: 'Ashish Solanki',   xpRequired: 350 },
+      { value: 'kaustubh_aggarwal',name: 'Kaustubh Aggarwal',xpRequired: 850 },
+      { value: 'madhur_virli',     name: 'Madhur Virli',     xpRequired: 1750 },
+    ];
+
+    function applyComicLocks() {
+      ['roaster-comic', 'resume-comic'].forEach(selectId => {
+        const select = document.getElementById(selectId);
+        if (!select) return;
+        Array.from(select.options).forEach(opt => {
+          const comic = COMIC_UNLOCKS.find(c => c.value === opt.value);
+          if (!comic) return;
+          if (xp >= comic.xpRequired) {
+            opt.disabled = false;
+            opt.classList.remove('locked-option');
+            // restore clean label
+            opt.text = opt.text.replace(/\s*🔒.*$/, '');
+          } else {
+            opt.disabled = true;
+            opt.classList.add('locked-option');
+            const baseLabel = opt.text.replace(/\s*🔒.*$/, '');
+            opt.text = `${baseLabel} 🔒 ${comic.xpRequired} XP`;
+            // if currently selected, switch to first unlocked
+            if (opt.selected) {
+              const firstUnlocked = Array.from(select.options).find(o => !o.disabled);
+              if (firstUnlocked) firstUnlocked.selected = true;
+            }
+          }
+        });
+      });
+    }
+
+    function showUnlockBanner(comicName) {
+      const banner = document.getElementById('unlockBanner');
+      document.getElementById('unlockSub').textContent = `// ${comicName} is now available`;
+      banner.classList.add('show');
+      setTimeout(() => banner.classList.remove('show'), 3000);
+    }
+
+    function checkNewUnlocks(prevXP) {
+      COMIC_UNLOCKS.forEach(comic => {
+        if (comic.xpRequired > 0 && prevXP < comic.xpRequired && xp >= comic.xpRequired) {
+          setTimeout(() => showUnlockBanner(comic.name), 500);
+        }
+      });
+    }
+
+    // Patch addXP to also handle unlocks
+    const _originalAddXP = addXP;
+    function addXP(amount, triggerEl) {
+      const prevXP = xp;
+      const result = _originalAddXP(amount, triggerEl);
+      checkNewUnlocks(prevXP);
+      applyComicLocks();
+      return result;
+    }
+
+    // Apply locks on page load
+    applyComicLocks();
     (function() {
       const canvas = document.getElementById('fire-canvas');
       const ctx = canvas.getContext('2d');
