@@ -21,7 +21,8 @@ def ask_groq(prompt):
 def ping():
     return "pong", 200
 
-
+@app.route("/")
+def index():
     return render_template("index.html", comic_options=COMIC_OPTIONS)
 
 @app.route("/api/roast", methods=["POST"])
@@ -58,7 +59,7 @@ def stack():
     level = data.get("level")
     priority = data.get("priority")
     prompt = f"""You are an opinionated senior developer who gives direct tech stack recommendations.
-    Recommend a tech stack for this project. Be specific and decisive — no wishy-washy answers.
+    Recommend a tech stack for this project. Be specific and decisive - no wishy-washy answers.
     Project: {project}
     Developer Experience Level: {level}
     Priority: {priority}
@@ -73,7 +74,7 @@ def stack():
 @app.route("/api/resume", methods=["POST"])
 def resume():
     data = request.json
-    mode = data.get("mode")          # "paste" or "form"
+    mode = data.get("mode")
     comic = data.get("comic")
 
     if mode == "paste":
