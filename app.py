@@ -17,8 +17,11 @@ def ask_groq(prompt):
     )
     return response.choices[0].message.content
 
-@app.route("/")
-def index():
+@app.route("/ping")
+def ping():
+    return "pong", 200
+
+
     return render_template("index.html", comic_options=COMIC_OPTIONS)
 
 @app.route("/api/roast", methods=["POST"])
