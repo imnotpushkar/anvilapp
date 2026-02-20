@@ -519,14 +519,7 @@
     .roadmap-item:not(.done) .todo-check { color: var(--text-dim); }
 
     /* Tool card zip-in animation */
-    .tool-card {
-      opacity: 0;
-      transform: translateY(60px);
-    }
-
-    .tool-card.zip-in {
-      animation: zipIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
-    }
+    
 
     @keyframes zipIn {
       0%   { opacity: 0; transform: translateY(60px) scale(0.97); }
@@ -704,9 +697,7 @@
       will-change: transform, opacity;
     }
 
-    .tool-card:nth-child(2) { animation-delay: 0.1s; }
-    .tool-card:nth-child(3) { animation-delay: 0.2s; }
-    .tool-card:nth-child(4) { animation-delay: 0.3s; }
+    
 
     .tool-card::before {
       content: '';
@@ -2224,45 +2215,53 @@
     const toolsSection = document.querySelector('.tools-section');
     const allCards = document.querySelectorAll('.tool-card');
 
-    // Set initial state — tools hidden below
-    toolsSection.style.opacity = '0';
-    toolsSection.style.transform = 'translateY(80px)';
-    allCards.forEach(card => {
-      card.style.opacity = '0';
-      card.style.transform = 'translateY(60px)';
-    });
+    const isMobile = () => window.innerWidth <= 768;
+
+    function initAnimationState() {
+      if (isMobile()) {
+        // Mobile: everything visible, no animation
+        heroSection.style.transform = '';
+        heroSection.style.opacity = '';
+        toolsSection.style.transform = '';
+        toolsSection.style.opacity = '';
+        allCards.forEach(card => {
+          card.style.transform = '';
+          card.style.opacity = '';
+        });
+      } else {
+        // Desktop: tools hidden initially
+        toolsSection.style.opacity = '0';
+        toolsSection.style.transform = 'translateY(80px)';
+        allCards.forEach(card => {
+          card.style.opacity = '0';
+          card.style.transform = 'translateY(60px)';
+        });
+      }
+    }
 
     function updateScrollAnimations() {
+      if (isMobile()) return;
       const scrollY = window.scrollY;
       const heroHeight = heroSection.offsetHeight;
       const triggerPoint = heroHeight * 0.35;
 
       if (scrollY > triggerPoint) {
         const progress = Math.min((scrollY - triggerPoint) / (heroHeight * 0.45), 1);
-
-        // Hero exits upward
         heroSection.style.transform = `translateY(${-progress * 80}px)`;
         heroSection.style.opacity = Math.max(1 - progress * 1.3, 0);
-
-        // Tools enter from below
         const toolsProgress = Math.min(progress * 1.3, 1);
         toolsSection.style.transform = `translateY(${(1 - toolsProgress) * 80}px)`;
         toolsSection.style.opacity = toolsProgress;
-
-        // Cards stagger in
         allCards.forEach((card, i) => {
           const delay = i * 0.1;
           const cardP = Math.max(Math.min((toolsProgress - delay) / 0.6, 1), 0);
           card.style.transform = `translateY(${(1 - cardP) * 60}px)`;
           card.style.opacity = cardP;
         });
-
       } else {
-        // Scroll back up — hero returns, tools retreat
-        const upProgress = Math.min(scrollY / triggerPoint, 1);
         heroSection.style.transform = 'translateY(0)';
         heroSection.style.opacity = '1';
-        toolsSection.style.transform = `translateY(${80 * (1 - upProgress * 0.5)}px)`;
+        toolsSection.style.transform = `translateY(80px)`;
         toolsSection.style.opacity = '0';
         allCards.forEach(card => {
           card.style.transform = 'translateY(60px)';
@@ -2271,11 +2270,9 @@
       }
     }
 
-    // Only run scroll animation on desktop
-    if (window.innerWidth > 768) {
-      window.addEventListener('scroll', updateScrollAnimations, { passive: true });
-      updateScrollAnimations();
-    }
+    initAnimationState();
+    window.addEventListener('scroll', updateScrollAnimations, { passive: true });
+    window.addEventListener('resize', initAnimationState);
 
     // ── Scroll blur intensity ──
     const scrollFade = document.querySelector('.scroll-fade');
