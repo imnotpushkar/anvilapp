@@ -157,9 +157,9 @@
 
     .nav-user { display: flex; align-items: center; gap: 10px; }
     .nav-avatar {
-      width: 28px; height: 28px;
+      width: 36px; height: 36px;
       border-radius: 50%;
-      border: 1px solid var(--accent);
+      border: 2px solid var(--accent);
       object-fit: cover;
     }
     .nav-username {
@@ -170,12 +170,20 @@
     }
     .nav-logout-btn {
       font-family: var(--mono);
-      font-size: 12px;
+      font-size: 11px;
       color: var(--text-dim);
       text-decoration: none;
       transition: color 0.2s;
+      cursor: pointer;
+      border: 1px solid transparent;
+      padding: 4px 8px;
+      letter-spacing: 0.1em;
+      position: relative;
     }
-    .nav-logout-btn:hover { color: var(--accent); }
+    .nav-logout-btn:hover { color: #ff4444; border-color: #ff4444; }
+    .nav-logout-btn .logout-label { display: none; }
+    .nav-logout-btn:hover .logout-arrow { display: none; }
+    .nav-logout-btn:hover .logout-label { display: inline; }
 
     .nav-links a {
       font-family: var(--mono);
@@ -692,6 +700,74 @@
       text-transform: uppercase;
       color: var(--text-dim);
     }
+
+    /* LOGOUT CONFIRM */
+    .logout-confirm-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .logout-confirm-overlay.show {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .logout-confirm-box {
+      background: var(--surface);
+      border: 1px solid #ff4444;
+      padding: 36px 48px;
+      text-align: center;
+      box-shadow: 0 0 40px rgba(255,68,68,0.15);
+    }
+    .logout-confirm-title {
+      font-family: var(--display);
+      font-size: 28px;
+      color: var(--text-bright);
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+    .logout-confirm-sub {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+      margin-bottom: 28px;
+    }
+    .logout-confirm-btns {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+    .logout-btn-cancel {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      padding: 10px 24px;
+      background: none;
+      border: 1px solid var(--border-bright);
+      color: var(--text);
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .logout-btn-cancel:hover { border-color: var(--text); }
+    .logout-btn-confirm {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      padding: 10px 24px;
+      background: #ff4444;
+      border: 1px solid #ff4444;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .logout-btn-confirm:hover { background: #cc0000; border-color: #cc0000; }
 
     /* NAV AUTHOR TAG */
     .nav-author-tag {
@@ -1965,7 +2041,10 @@
       <div class="nav-user" id="nav-user" style="display:none;">
         <img class="nav-avatar" id="nav-avatar" src="" alt="avatar"/>
         <span class="nav-username" id="nav-username"></span>
-        <a href="/auth/logout" class="nav-logout-btn">↩</a>
+        <button class="nav-logout-btn" onclick="confirmLogout()">
+          <span class="logout-arrow">↩</span>
+          <span class="logout-label">SIGN OUT</span>
+        </button>
       </div>
     </div>
   </nav>
@@ -2494,6 +2573,16 @@
     }
 
     // ── Auth state ──
+    function confirmLogout() {
+      document.getElementById('logoutConfirm').classList.add('show');
+    }
+    function cancelLogout() {
+      document.getElementById('logoutConfirm').classList.remove('show');
+    }
+    function doLogout() {
+      window.location.href = '/auth/logout';
+    }
+
     async function initAuthState() {
       try {
         const res = await fetch('/api/user/stats');
@@ -2977,8 +3066,8 @@
 
       // Parse [ROAST] and [FIXED] sections from response
       const raw = data.message || '';
-      const roastMatch = raw.match(/\[ROAST\]([\s\S]*?)(?=\[FIXED\]|$)/i);
-      const fixedMatch = raw.match(/\[FIXED\]([\s\S]*?)$/i);
+      const roastMatch = raw.match(/(?:\[ROAST\]|#\s*ROAST)([\s\S]*?)(?=(?:\[FIXED\]|#\s*FIXED)|$)/i);
+      const fixedMatch = raw.match(/(?:\[FIXED\]|#\s*FIXED)([\s\S]*?)$/i);
       const roastText = roastMatch ? roastMatch[1].trim() : raw;
       const fixedText = fixedMatch ? fixedMatch[1].trim() : '(No fixed version returned — try again)';
 
@@ -3358,6 +3447,18 @@
     <span class="footer-dot">·</span>
     <span class="footer-credit">© 2025 Pushkar Gupta</span>
   </footer>
+
+  <!-- Logout Confirmation -->
+  <div class="logout-confirm-overlay" id="logoutConfirm" onclick="if(event.target===this)cancelLogout()">
+    <div class="logout-confirm-box">
+      <div class="logout-confirm-title">SIGN OUT?</div>
+      <div class="logout-confirm-sub">// your XP is saved. come back anytime.</div>
+      <div class="logout-confirm-btns">
+        <button class="logout-btn-cancel" onclick="cancelLogout()">STAY</button>
+        <button class="logout-btn-confirm" onclick="doLogout()">SIGN OUT</button>
+      </div>
+    </div>
+  </div>
 
 </body>
 </html>
