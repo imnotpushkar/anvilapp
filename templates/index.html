@@ -372,7 +372,7 @@
       padding: 80px 48px 60px;
       max-width: 1200px;
       margin: 0 auto;
-      transition: transform 0.08s linear, opacity 0.08s linear;
+      transition: transform 0.06s linear, opacity 0.06s linear;
       will-change: transform, opacity;
     }
 
@@ -519,7 +519,10 @@
     .roadmap-item:not(.done) .todo-check { color: var(--text-dim); }
 
     /* Tool card zip-in animation */
-    
+    .tool-card {
+      opacity: 0;
+      transform: translateY(60px);
+    }
 
     .tool-card.zip-in {
       animation: zipIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -661,7 +664,7 @@
       padding: 0 48px 100px;
       max-width: 1100px;
       margin: 0 auto;
-      transition: transform 0.08s linear, opacity 0.08s linear;
+      transition: transform 0.06s linear, opacity 0.06s linear;
       will-change: transform, opacity;
     }
 
@@ -695,7 +698,7 @@
       border: 1px solid var(--border);
       padding: 40px 36px;
       cursor: pointer;
-      transition: border-color 0.3s, background 0.3s, box-shadow 0.3s, transform 0.08s linear, opacity 0.08s linear;
+      transition: border-color 0.3s, background 0.3s, box-shadow 0.3s, transform 0.06s linear, opacity 0.06s linear;
       position: relative;
       overflow: hidden;
       will-change: transform, opacity;
@@ -2084,10 +2087,18 @@
 
     renderTodos();
 
-    // ── Scroll-driven section animations ──
+    // ── Scroll-driven bidirectional animation ──
     const heroSection = document.querySelector('.hero');
     const toolsSection = document.querySelector('.tools-section');
     const allCards = document.querySelectorAll('.tool-card');
+
+    // Set initial state — tools hidden below
+    toolsSection.style.opacity = '0';
+    toolsSection.style.transform = 'translateY(80px)';
+    allCards.forEach(card => {
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(60px)';
+    });
 
     function updateScrollAnimations() {
       const scrollY = window.scrollY;
@@ -2095,33 +2106,31 @@
       const triggerPoint = heroHeight * 0.35;
 
       if (scrollY > triggerPoint) {
-        // Scrolling into tools — hero exits up, tools enter from below
-        const progress = Math.min((scrollY - triggerPoint) / (heroHeight * 0.5), 1);
-        const heroOffset = -progress * 80;
-        const heroOpacity = 1 - progress * 1.2;
-        heroSection.style.transform = `translateY(${heroOffset}px)`;
-        heroSection.style.opacity = Math.max(heroOpacity, 0);
+        const progress = Math.min((scrollY - triggerPoint) / (heroHeight * 0.45), 1);
 
-        // Tools slide in from below
-        const toolsProgress = Math.min(progress * 1.2, 1);
-        const toolsOffset = (1 - toolsProgress) * 80;
-        toolsSection.style.transform = `translateY(${toolsOffset}px)`;
+        // Hero exits upward
+        heroSection.style.transform = `translateY(${-progress * 80}px)`;
+        heroSection.style.opacity = Math.max(1 - progress * 1.3, 0);
+
+        // Tools enter from below
+        const toolsProgress = Math.min(progress * 1.3, 1);
+        toolsSection.style.transform = `translateY(${(1 - toolsProgress) * 80}px)`;
         toolsSection.style.opacity = toolsProgress;
 
-        // Stagger each card
+        // Cards stagger in
         allCards.forEach((card, i) => {
-          const cardDelay = i * 0.06;
-          const cardProgress = Math.min((toolsProgress - cardDelay) / (1 - cardDelay * 3), 1);
-          const cardOffset = (1 - Math.max(cardProgress, 0)) * 60;
-          card.style.transform = `translateY(${cardOffset}px)`;
-          card.style.opacity = Math.max(cardProgress, 0);
+          const delay = i * 0.1;
+          const cardP = Math.max(Math.min((toolsProgress - delay) / 0.6, 1), 0);
+          card.style.transform = `translateY(${(1 - cardP) * 60}px)`;
+          card.style.opacity = cardP;
         });
 
       } else {
-        // Scrolling back up — hero comes back, tools retreat
+        // Scroll back up — hero returns, tools retreat
+        const upProgress = Math.min(scrollY / triggerPoint, 1);
         heroSection.style.transform = 'translateY(0)';
         heroSection.style.opacity = '1';
-        toolsSection.style.transform = 'translateY(80px)';
+        toolsSection.style.transform = `translateY(${80 * (1 - upProgress * 0.5)}px)`;
         toolsSection.style.opacity = '0';
         allCards.forEach(card => {
           card.style.transform = 'translateY(60px)';
@@ -2129,14 +2138,6 @@
         });
       }
     }
-
-    // Initial state
-    toolsSection.style.opacity = '0';
-    toolsSection.style.transform = 'translateY(80px)';
-    allCards.forEach(card => {
-      card.style.opacity = '0';
-      card.style.transform = 'translateY(60px)';
-    });
 
     window.addEventListener('scroll', updateScrollAnimations, { passive: true });
     updateScrollAnimations();
