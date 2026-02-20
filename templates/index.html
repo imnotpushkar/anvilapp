@@ -1656,6 +1656,7 @@
 
     function addXP(amount, triggerEl) {
       const prevLevel = getCurrentLevel().idx;
+      const prevXP = xp;
       xp += amount;
       uses += 1;
       localStorage.setItem('fis_xp', xp);
@@ -1664,6 +1665,8 @@
       updateUI();
       if (triggerEl) showXPFloat(amount, triggerEl);
       if (newLevel.idx > prevLevel) showLevelUp(newLevel.name);
+      checkNewUnlocks(prevXP);
+      applyComicLocks();
       return amount;
     }
 
@@ -1731,15 +1734,7 @@
       });
     }
 
-    // Patch addXP to also handle unlocks
-    const _originalAddXP = addXP;
-    function addXP(amount, triggerEl) {
-      const prevXP = xp;
-      const result = _originalAddXP(amount, triggerEl);
-      checkNewUnlocks(prevXP);
-      applyComicLocks();
-      return result;
-    }
+
 
     // Apply locks on page load
     applyComicLocks();
