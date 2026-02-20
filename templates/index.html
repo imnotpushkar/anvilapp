@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Anvil</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  {% if user %}
+  <meta id="anvil-user-meta" data-name="{{ user.name }}" data-avatar="{{ user.avatar }}">
+  {% endif %}
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -137,6 +140,42 @@
       gap: 32px;
       list-style: none;
     }
+
+    .nav-auth { display: flex; align-items: center; gap: 12px; }
+
+    .nav-login-btn {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      padding: 6px 14px;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s;
+    }
+    .nav-login-btn:hover { background: var(--accent); color: #000; }
+
+    .nav-user { display: flex; align-items: center; gap: 10px; }
+    .nav-avatar {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      border: 1px solid var(--accent);
+      object-fit: cover;
+    }
+    .nav-username {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      color: var(--text);
+    }
+    .nav-logout-btn {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text-dim);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .nav-logout-btn:hover { color: var(--accent); }
 
     .nav-links a {
       font-family: var(--mono);
@@ -1760,6 +1799,8 @@
       .nav-logo-tagline { display: none; }
       .nav-sparks { height: 10px; margin-bottom: 0; }
       .nav-links { display: none; }
+      .nav-username { display: none; }
+      .nav-login-btn { font-size: 9px; padding: 5px 10px; }
 
       /* HUD — horizontal scroll */
       .hud {
@@ -1919,6 +1960,14 @@
       <li><a href="#">Leaderboard</a></li>
       <li><a href="#">About</a></li>
     </ul>
+    <div class="nav-auth" id="nav-auth">
+      <a href="/auth/login" class="nav-login-btn" id="nav-login-btn">⬡ SIGN IN</a>
+      <div class="nav-user" id="nav-user" style="display:none;">
+        <img class="nav-avatar" id="nav-avatar" src="" alt="avatar"/>
+        <span class="nav-username" id="nav-username"></span>
+        <a href="/auth/logout" class="nav-logout-btn">↩</a>
+      </div>
+    </div>
   </nav>
 
   <!-- HUD -->
@@ -2433,8 +2482,53 @@
       if (newLevel.idx > prevLevel) showLevelUp(newLevel.name);
       checkNewUnlocks(prevXP);
       applyComicLocks();
+      // Sync to Supabase if logged in
+      if (window.__anvilUser) {
+        fetch('/api/user/xp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ xp, streak, tools_used: uses })
+        }).catch(() => {});
+      }
       return amount;
     }
+
+    // ── Auth state ──
+    async function initAuthState() {
+      try {
+        const res = await fetch('/api/user/stats');
+        if (res.ok) {
+          const data = await res.json();
+          // Logged in — load stats from Supabase
+          window.__anvilUser = true;
+          // Only migrate if Supabase XP is less than local (first login migration)
+          if (data.xp >= xp) {
+            xp = data.xp;
+            streak = data.streak || streak;
+            uses = data.tools_used || uses;
+            localStorage.setItem('fis_xp', xp);
+            localStorage.setItem('fis_uses', uses);
+            updateUI();
+            applyComicLocks();
+          }
+          // Show user in nav
+          document.getElementById('nav-login-btn').style.display = 'none';
+          document.getElementById('nav-user').style.display = 'flex';
+          // Get user info from meta tag injected by Flask
+          const userMeta = document.getElementById('anvil-user-meta');
+          if (userMeta) {
+            document.getElementById('nav-username').textContent = userMeta.dataset.name;
+            document.getElementById('nav-avatar').src = userMeta.dataset.avatar;
+          }
+        } else {
+          window.__anvilUser = false;
+        }
+      } catch(e) {
+        window.__anvilUser = false;
+      }
+    }
+
+    initAuthState();
 
     // Streak logic
     const today = new Date().toDateString();
