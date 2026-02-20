@@ -1392,6 +1392,14 @@
       border-bottom: 1px solid var(--border);
     }
     .verdict-half:last-child { border-bottom: none; }
+    .verdict-half.roast-half {
+      border-left: 3px solid var(--resume);
+      background: rgba(168, 85, 247, 0.04);
+    }
+    .verdict-half.fix-half {
+      border-left: 3px solid var(--stack);
+      background: rgba(0, 230, 118, 0.04);
+    }
     .verdict-half-label {
       font-family: var(--mono);
       font-size: 9px;
@@ -2461,11 +2469,11 @@
               <div class="verdict-hint">Paste or fill your details and hit Roast</div>
             </div>
             <div class="verdict-split" id="resume-verdict-result" style="display:none;">
-              <div class="verdict-half">
+              <div class="verdict-half roast-half">
                 <div class="verdict-half-label roast-label">// the roast</div>
                 <div class="verdict-half-text" id="resume-roast-text"></div>
               </div>
-              <div class="verdict-half">
+              <div class="verdict-half fix-half">
                 <div class="verdict-half-label fix-label">// fixed version</div>
                 <div class="verdict-half-text" id="resume-fixed-text"></div>
               </div>
