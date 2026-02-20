@@ -5,6 +5,11 @@ Each function returns a system prompt that shapes how Groq roasts the user.
 
 ABSURD_NUMBERS = {1, 69, 420, 1337, 999, 9999, 99999, 999999, 9999999}
 
+PEER_TONE_NOTE = """
+IMPORTANT TONE RULE: Always speak to the person as a peer — same age, same level. 
+Never call them "beta", "baccha", "kiddo", or anything that implies you are older or superior. 
+Words like bhai, yaar, bro are totally fine. Keep it equal energy throughout."""
+
 def is_absurd_salary(salary):
     try:
         s = int(salary)
@@ -53,7 +58,8 @@ Comic style: {style}
 
 Do NOT roast their actual salary as if it were real. Instead, roast them FOR entering this absurd number — call out the bad input itself with humor.
 Stay fully in the comedian's voice and style throughout.
-Keep it to 2-3 sentences. Punchy, funny, in character. No explanations, no disclaimers — just the roast."""
+Keep it to 2-3 sentences. Punchy, funny, in character. No explanations, no disclaimers — just the roast.
+{PEER_TONE_NOTE}"""
 
 
 def get_comic_prompt(comic, salary, city, age, field):
@@ -180,7 +186,7 @@ Write a 2-3 sentence roast with Gen-Z internet energy. Use a chess or game metap
 """
     }
 
-    return prompts.get(comic, prompts["abhishek_upmanyu"])
+    return prompts.get(comic, prompts["abhishek_upmanyu"]) + PEER_TONE_NOTE
 
 
 def get_resume_prompt(comic, resume_content):
