@@ -1162,6 +1162,9 @@
     .share-ratio-btn:hover { border-color: var(--accent); color: var(--text); }
     .share-ratio-btn.active { border-color: var(--accent); color: var(--text-bright); background: rgba(255,77,0,0.08); }
     .share-ratio-icon { border: 1.5px solid currentColor; opacity: 0.6; }
+    .ratio-label { font-size: 11px; letter-spacing: 0.08em; }
+    .ratio-hint { font-family: var(--mono); font-size: 8px; letter-spacing: 0.08em; color: var(--text-dim); margin-top: 1px; }
+    .share-ratio-btn.active .ratio-hint { color: rgba(255,77,0,0.7); }
     .share-ratio-icon.sq { width: 18px; height: 18px; }
     .share-ratio-icon.pt { width: 14px; height: 18px; }
     .share-ratio-icon.st { width: 10px; height: 18px; }
@@ -1285,7 +1288,7 @@
       <h1>ANVIL</h1>
       <span class="hero-tagline">Forged in Satire</span>
     </div>
-    <p class="hero-sub">Three AI-powered tools that are actually useful — wrapped in enough sass to make you question your life choices.</p>
+    <p class="hero-sub">AI-powered tools that are actually useful — wrapped in enough sass to make you question your life choices.</p>
     <div class="hero-stats">
       <div class="stat stat-uses">
         <span class="stat-num" id="statUses">0</span>
@@ -2280,13 +2283,19 @@
           <div class="share-control-label">Aspect Ratio</div>
           <div class="share-ratio-switcher">
             <button class="share-ratio-btn active" id="ratio-1" onclick="setShareRatio('1:1')">
-              <div class="share-ratio-icon sq"></div>1:1
+              <div class="share-ratio-icon sq"></div>
+              <span class="ratio-label">1:1</span>
+              <span class="ratio-hint">Twitter / FB</span>
             </button>
             <button class="share-ratio-btn" id="ratio-2" onclick="setShareRatio('4:5')">
-              <div class="share-ratio-icon pt"></div>4:5
+              <div class="share-ratio-icon pt"></div>
+              <span class="ratio-label">4:5</span>
+              <span class="ratio-hint">Instagram</span>
             </button>
             <button class="share-ratio-btn" id="ratio-3" onclick="setShareRatio('9:16')">
-              <div class="share-ratio-icon st"></div>9:16
+              <div class="share-ratio-icon st"></div>
+              <span class="ratio-label">9:16</span>
+              <span class="ratio-hint">Story</span>
             </button>
           </div>
         </div>
