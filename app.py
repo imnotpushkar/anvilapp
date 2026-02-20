@@ -40,7 +40,8 @@ def index():
 
 @app.route("/auth/login")
 def login():
-    redirect_url = request.url_root.rstrip("/") + "/auth/callback"
+    base_url = os.environ.get("APP_URL", request.url_root.rstrip("/"))
+    redirect_url = base_url + "/auth/callback"
     result = supabase.auth.sign_in_with_oauth({
         "provider": "google",
         "options": {"redirect_to": redirect_url}
