@@ -369,10 +369,169 @@
 
     /* HERO */
     .hero {
-      padding: 100px 48px 80px;
-      max-width: 1100px;
+      padding: 80px 48px 60px;
+      max-width: 1200px;
       margin: 0 auto;
       animation: fadeUp 0.6s ease both;
+    }
+
+    /* Hero split layout */
+    .hero-split {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 48px;
+      align-items: start;
+    }
+
+    .hero-left { display: flex; flex-direction: column; }
+    .hero-right { padding-top: 24px; }
+
+    /* Todo panel */
+    .todo-panel {
+      background: var(--surface);
+      border: 1px solid var(--border-bright);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .todo-header { border-bottom: 1px solid var(--border); }
+
+    .todo-tabs {
+      display: flex;
+    }
+
+    .todo-tab {
+      flex: 1;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-dim);
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.15em;
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: left;
+    }
+    .todo-tab:hover { color: var(--text); }
+    .todo-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .todo-section { display: none; padding: 16px; }
+    .todo-section.active { display: block; }
+
+    .todo-add {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .todo-add input {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border-bright);
+      color: var(--text-bright);
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 8px 12px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .todo-add input:focus { border-color: var(--accent); }
+    .todo-add input::placeholder { color: var(--text-dim); }
+
+    .todo-add-btn {
+      background: var(--accent);
+      border: none;
+      color: #fff;
+      font-size: 20px;
+      width: 36px;
+      cursor: pointer;
+      transition: background 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .todo-add-btn:hover { background: #ff6620; }
+
+    .todo-list { list-style: none; display: flex; flex-direction: column; gap: 4px; max-height: 280px; overflow-y: auto; }
+
+    .todo-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      transition: border-color 0.2s;
+      animation: fadeUp 0.2s ease both;
+    }
+    .todo-item:hover { border-color: var(--border-bright); }
+
+    .todo-check {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text-dim);
+      cursor: pointer;
+      flex-shrink: 0;
+      width: 16px;
+      transition: color 0.2s;
+    }
+    .todo-item.done .todo-check { color: var(--accent); }
+
+    .todo-text {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text);
+      flex: 1;
+      transition: all 0.2s;
+    }
+    .todo-item.done .todo-text { text-decoration: line-through; color: var(--text-dim); }
+
+    .todo-delete {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 14px;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.2s, color 0.2s;
+      padding: 0 2px;
+    }
+    .todo-item:hover .todo-delete { opacity: 1; }
+    .todo-delete:hover { color: #ff4444; }
+
+    .todo-empty {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+      text-align: center;
+      padding: 24px 0;
+    }
+
+    /* Roadmap items */
+    .roadmap-list { max-height: 320px; }
+    .roadmap-item { cursor: default; }
+    .roadmap-item.done .todo-check { color: #00e676; }
+    .roadmap-item:not(.done) .todo-check { color: var(--text-dim); }
+
+    /* Tool card zip-in animation */
+    .tool-card {
+      opacity: 0;
+      transform: translateY(60px);
+    }
+
+    .tool-card.zip-in {
+      animation: zipIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    @keyframes zipIn {
+      0%   { opacity: 0; transform: translateY(60px) scale(0.97); }
+      60%  { transform: translateY(-8px) scale(1.01); }
+      80%  { transform: translateY(4px) scale(0.99); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
     }
 
     .hero-eyebrow {
@@ -1295,25 +1454,67 @@
 
   <!-- HERO -->
   <section class="hero">
-    <div class="hero-eyebrow">Built different. Roasted fresh.</div>
-    <div class="hero-heading-block">
-      <div class="hero-sparks"><span></span><span></span><span></span><span></span><span></span></div>
-      <h1>ANVIL</h1>
-      <span class="hero-tagline">Forged in Satire</span>
-    </div>
-    <p class="hero-sub">AI-powered tools that are actually useful — wrapped in enough sass to make you question your life choices.</p>
-    <div class="hero-stats">
-      <div class="stat stat-uses">
-        <span class="stat-num" id="statUses">0</span>
-        <span class="stat-label">Tools Used</span>
+    <div class="hero-split">
+      <!-- Left: Hero content -->
+      <div class="hero-left">
+        <div class="hero-eyebrow">Built different. Roasted fresh.</div>
+        <div class="hero-heading-block">
+          <div class="hero-sparks"><span></span><span></span><span></span><span></span><span></span></div>
+          <h1>ANVIL</h1>
+          <span class="hero-tagline">Forged in Satire</span>
+        </div>
+        <p class="hero-sub">AI-powered tools that are actually useful — wrapped in enough sass to make you question your life choices.</p>
+        <div class="hero-stats">
+          <div class="stat stat-uses">
+            <span class="stat-num" id="statUses">0</span>
+            <span class="stat-label">Tools Used</span>
+          </div>
+          <div class="stat stat-streak">
+            <span class="stat-num"><span id="statStreak">0</span><span class="fire-animated">🔥</span></span>
+            <span class="stat-label">Day Streak</span>
+          </div>
+          <div class="stat stat-xp">
+            <span class="stat-num" id="statXP">0</span>
+            <span class="stat-label">Total XP</span>
+          </div>
+        </div>
       </div>
-      <div class="stat stat-streak">
-        <span class="stat-num"><span id="statStreak">0</span><span class="fire-animated">🔥</span></span>
-        <span class="stat-label">Day Streak</span>
-      </div>
-      <div class="stat stat-xp">
-        <span class="stat-num" id="statXP">0</span>
-        <span class="stat-label">Total XP</span>
+
+      <!-- Right: To-do list -->
+      <div class="hero-right">
+        <div class="todo-panel">
+          <div class="todo-header">
+            <div class="todo-tabs">
+              <button class="todo-tab active" id="tab-personal" onclick="switchTodoTab('personal')">// MY TASKS</button>
+              <button class="todo-tab" id="tab-roadmap" onclick="switchTodoTab('roadmap')">// ANVIL ROADMAP</button>
+            </div>
+          </div>
+
+          <!-- Personal tasks -->
+          <div class="todo-section active" id="todo-personal">
+            <div class="todo-add">
+              <input type="text" id="todo-input" placeholder="add a task..." onkeydown="if(event.key==='Enter') addTodo()"/>
+              <button class="todo-add-btn" onclick="addTodo()">+</button>
+            </div>
+            <ul class="todo-list" id="todo-list"></ul>
+            <div class="todo-empty" id="todo-empty">// no tasks yet. add one above.</div>
+          </div>
+
+          <!-- Anvil roadmap -->
+          <div class="todo-section" id="todo-roadmap">
+            <ul class="todo-list roadmap-list">
+              <li class="todo-item roadmap-item done"><span class="todo-check">✓</span><span class="todo-text">4 AI tools live</span></li>
+              <li class="todo-item roadmap-item done"><span class="todo-check">✓</span><span class="todo-text">Gamification system</span></li>
+              <li class="todo-item roadmap-item done"><span class="todo-check">✓</span><span class="todo-text">Shareable result cards</span></li>
+              <li class="todo-item roadmap-item done"><span class="todo-check">✓</span><span class="todo-text">Unlockable comic styles</span></li>
+              <li class="todo-item roadmap-item done"><span class="todo-check">✓</span><span class="todo-text">Mobile responsive</span></li>
+              <li class="todo-item roadmap-item"><span class="todo-check">○</span><span class="todo-text">Login + leaderboard</span></li>
+              <li class="todo-item roadmap-item"><span class="todo-check">○</span><span class="todo-text">Hinglish mode</span></li>
+              <li class="todo-item roadmap-item"><span class="todo-check">○</span><span class="todo-text">Rewards & crates</span></li>
+              <li class="todo-item roadmap-item"><span class="todo-check">○</span><span class="todo-text">More tools</span></li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -1826,6 +2027,78 @@
         canvas.height = window.innerHeight;
       });
     })();
+
+    // ── Todo List ──
+    let todos = JSON.parse(localStorage.getItem('anvil_todos') || '[]');
+
+    function saveTodos() { localStorage.setItem('anvil_todos', JSON.stringify(todos)); }
+
+    function renderTodos() {
+      const list = document.getElementById('todo-list');
+      const empty = document.getElementById('todo-empty');
+      list.innerHTML = '';
+      if (todos.length === 0) {
+        empty.style.display = 'block';
+        return;
+      }
+      empty.style.display = 'none';
+      todos.forEach((todo, i) => {
+        const li = document.createElement('li');
+        li.className = 'todo-item' + (todo.done ? ' done' : '');
+        li.innerHTML = `
+          <span class="todo-check" onclick="toggleTodo(${i})">${todo.done ? '✓' : '○'}</span>
+          <span class="todo-text">${todo.text}</span>
+          <button class="todo-delete" onclick="deleteTodo(${i})">✕</button>`;
+        list.appendChild(li);
+      });
+    }
+
+    function addTodo() {
+      const input = document.getElementById('todo-input');
+      const text = input.value.trim();
+      if (!text) return;
+      todos.unshift({ text, done: false });
+      saveTodos();
+      renderTodos();
+      input.value = '';
+    }
+
+    function toggleTodo(i) {
+      todos[i].done = !todos[i].done;
+      saveTodos();
+      renderTodos();
+    }
+
+    function deleteTodo(i) {
+      todos.splice(i, 1);
+      saveTodos();
+      renderTodos();
+    }
+
+    function switchTodoTab(tab) {
+      document.getElementById('todo-personal').classList.toggle('active', tab === 'personal');
+      document.getElementById('todo-roadmap').classList.toggle('active', tab === 'roadmap');
+      document.getElementById('tab-personal').classList.toggle('active', tab === 'personal');
+      document.getElementById('tab-roadmap').classList.toggle('active', tab === 'roadmap');
+    }
+
+    renderTodos();
+
+    // ── Tool card zip-in on scroll ──
+    const cards = document.querySelectorAll('.tool-card');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const card = entry.target;
+          const idx = Array.from(cards).indexOf(card);
+          setTimeout(() => {
+            card.classList.add('zip-in');
+          }, idx * 80);
+          observer.unobserve(card);
+        }
+      });
+    }, { threshold: 0.1 });
+    cards.forEach(card => observer.observe(card));
 
     // ── Scroll blur intensity ──
     const scrollFade = document.querySelector('.scroll-fade');
