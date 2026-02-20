@@ -1,13 +1,22 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect, session
 from groq import Groq
 from comics import get_comic_prompt, get_resume_prompt, COMIC_OPTIONS
 from dotenv import load_dotenv
+from supabase import create_client, Client
+import os
+
 load_dotenv()
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "anvil-dev-secret")
 
-import os
+# Groq client
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+
+# Supabase client
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY")
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 
 def ask_groq(prompt):
@@ -17,52 +26,125 @@ def ask_groq(prompt):
     )
     return response.choices[0].message.content
 
+
 @app.route("/ping")
 def ping():
     return "pong", 200
 
+
 @app.route("/")
 def index():
-    return render_template("index.html", comic_options=COMIC_OPTIONS)
+    user = session.get("user")
+    return render_template("index.html", comic_options=COMIC_OPTIONS, user=user)
+
+
+@app.route("/auth/login")
+def login():
+    redirect_url = request.url_root.rstrip("/") + "/auth/callback"
+    result = supabase.auth.sign_in_with_oauth({
+        "provider": "google",
+        "options": {"redirect_to": redirect_url}
+    })
+    return redirect(result.url)
+
+
+@app.route("/auth/callback")
+def auth_callback():
+    code = request.args.get("code")
+    if not code:
+        return redirect("/")
+    try:
+        result = supabase.auth.exchange_code_for_session({"auth_code": code})
+        user = result.user
+        access_token = result.session.access_token
+        session["user"] = {
+            "id": user.id,
+            "email": user.email,
+            "name": user.user_metadata.get("full_name", user.email),
+            "avatar": user.user_metadata.get("avatar_url", ""),
+            "access_token": access_token
+        }
+        existing = supabase.table("user_stats").select("*").eq("user_id", user.id).execute()
+        if not existing.data:
+            supabase.table("user_stats").insert({
+                "user_id": user.id,
+                "xp": 0,
+                "streak": 0,
+                "tools_used": 0
+            }).execute()
+    except Exception as e:
+        print(f"Auth error: {e}")
+    return redirect("/")
+
+
+@app.route("/auth/logout")
+def logout():
+    session.clear()
+    return redirect("/")
+
+
+@app.route("/api/user/stats", methods=["GET"])
+def get_user_stats():
+    user = session.get("user")
+    if not user:
+        return jsonify({"error": "not logged in"}), 401
+    result = supabase.table("user_stats").select("*").eq("user_id", user["id"]).execute()
+    if result.data:
+        return jsonify(result.data[0])
+    return jsonify({"xp": 0, "streak": 0, "tools_used": 0})
+
+
+@app.route("/api/user/xp", methods=["POST"])
+def save_xp():
+    user = session.get("user")
+    if not user:
+        return jsonify({"error": "not logged in"}), 401
+    data = request.json
+    supabase.table("user_stats").upsert({
+        "user_id": user["id"],
+        "xp": data.get("xp", 0),
+        "streak": data.get("streak", 0),
+        "tools_used": data.get("tools_used", 0)
+    }).execute()
+    return jsonify({"success": True})
+
+
+@app.route("/api/leaderboard", methods=["GET"])
+def leaderboard():
+    result = supabase.table("user_stats").select("xp, users(display_name, avatar_url)").order("xp", desc=True).limit(50).execute()
+    return jsonify(result.data)
+
 
 @app.route("/api/roast", methods=["POST"])
 def roast():
     data = request.json
-    salary = data.get("salary")
-    city = data.get("city")
-    age = data.get("age")
-    field = data.get("field")
-    comic = data.get("comic")
-    prompt = get_comic_prompt(comic, salary, city, age, field)
+    prompt = get_comic_prompt(data.get("comic"), data.get("salary"), data.get("city"), data.get("age"), data.get("field"))
     return jsonify({"message": ask_groq(prompt)})
+
 
 @app.route("/api/idea", methods=["POST"])
 def idea():
     data = request.json
-    idea = data.get("idea")
-    market = data.get("market")
     prompt = f"""You are a sharp startup analyst with a dark sense of humor.
     Analyze this startup idea and tell the person:
     1. If it already exists (and name competitors)
     2. How original it actually is (score out of 10)
     3. Whether it has potential or is dead on arrival
     4. One savage but constructive piece of advice
-    Idea: {idea}
-    Target Market: {market}
+    Idea: {data.get("idea")}
+    Target Market: {data.get("market")}
     Keep it punchy, honest, and slightly brutal. 4-5 sentences max."""
     return jsonify({"message": ask_groq(prompt)})
+
 
 @app.route("/api/stack", methods=["POST"])
 def stack():
     data = request.json
-    project = data.get("project")
-    level = data.get("level")
-    priority = data.get("priority")
     prompt = f"""You are an opinionated senior developer who gives direct tech stack recommendations.
     Recommend a tech stack for this project. Be specific and decisive - no wishy-washy answers.
-    Project: {project}
-    Developer Experience Level: {level}
-    Priority: {priority}
+    Project: {data.get("project")}
+    Developer Experience Level: {data.get("level")}
+    Priority: {data.get("priority")}
     Format your answer as:
     FRONTEND: ...
     BACKEND: ...
@@ -71,27 +153,20 @@ def stack():
     WHY: one punchy sentence explaining the choice."""
     return jsonify({"message": ask_groq(prompt)})
 
+
 @app.route("/api/resume", methods=["POST"])
 def resume():
     data = request.json
     mode = data.get("mode")
     comic = data.get("comic")
-
     if mode == "paste":
         resume_content = data.get("resume_text", "").strip()
     else:
-        name = data.get("name", "")
-        experience = data.get("experience", "")
-        skills = data.get("skills", "")
-        education = data.get("education", "")
-        resume_content = f"Name/Title: {name}\nExperience: {experience}\nSkills: {skills}\nEducation: {education}"
-
+        resume_content = f"Name/Title: {data.get('name','')}\nExperience: {data.get('experience','')}\nSkills: {data.get('skills','')}\nEducation: {data.get('education','')}"
     if not resume_content:
         return jsonify({"error": "No resume content provided"}), 400
+    return jsonify({"message": ask_groq(get_resume_prompt(comic, resume_content))})
 
-    prompt = get_resume_prompt(comic, resume_content)
-    result = ask_groq(prompt)
-    return jsonify({"message": result})
 
 if __name__ == "__main__":
     app.run(debug=True)
