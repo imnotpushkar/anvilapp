@@ -1391,6 +1391,138 @@
       max-height: 400px;
       box-shadow: 0 0 40px rgba(0,0,0,0.6);
     }
+  
+    /* ── MOBILE RESPONSIVE ── */
+    @media (max-width: 768px) {
+
+      /* Nav */
+      nav {
+        padding: 0 16px;
+        height: 52px;
+      }
+      .nav-logo { flex-direction: row; align-items: center; gap: 8px; }
+      .nav-logo-tagline { display: none; }
+      .nav-sparks { height: 10px; margin-bottom: 0; }
+      .nav-links { display: none; }
+
+      /* HUD — horizontal scroll */
+      .hud {
+        padding: 0;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        top: 52px;
+      }
+      .hud::-webkit-scrollbar { display: none; }
+      .hud-block {
+        padding: 10px 16px;
+        min-width: 110px;
+        flex-shrink: 0;
+      }
+      .hud-xp-block {
+        padding: 10px 16px;
+        min-width: 160px;
+        flex-shrink: 0;
+      }
+      .hud-label { font-size: 8px; }
+      .hud-value { font-size: 16px; }
+
+      /* Hero — single column, no split */
+      .hero { padding: 40px 16px 32px; }
+      .hero-split {
+        grid-template-columns: 1fr;
+        gap: 24px;
+      }
+      .hero-left { align-items: flex-start; }
+      .hero-right { padding-top: 0; }
+      .hero h1 { font-size: clamp(56px, 16vw, 90px); }
+      .hero-sub {
+        font-size: 13px;
+        text-align: left;
+        align-self: flex-start;
+        max-width: 100%;
+      }
+      .hero-stats { align-self: flex-start; overflow-x: auto; }
+      .stat { min-width: 100px; padding: 14px 16px; }
+      .stat-num { font-size: 28px; }
+
+      /* Todo panel */
+      .todo-panel { max-height: 280px; }
+      .todo-list { max-height: 160px; }
+
+      /* Tools section — DISABLE scroll animation on mobile, always visible */
+      .tools-section {
+        opacity: 1 !important;
+        transform: none !important;
+        padding: 0 16px 60px;
+      }
+
+      /* Tools grid — single column */
+      .tools-grid { grid-template-columns: 1fr; gap: 2px; }
+      .tool-card {
+        opacity: 1 !important;
+        transform: none !important;
+        padding: 28px 20px;
+      }
+      .tool-number { font-size: 36px; }
+      .tool-name { font-size: 22px; }
+
+      /* Section label */
+      .section-label { font-size: 9px; margin-bottom: 20px; }
+
+      /* Modal — slide up from bottom */
+      .modal-overlay { padding: 0; align-items: flex-end; }
+      .modal {
+        max-width: 100%;
+        width: 100%;
+        padding: 24px 16px;
+        max-height: 90vh;
+        overflow-y: auto;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        border-bottom: none;
+      }
+      .modal-wide { max-width: 100% !important; }
+      .modal-title { font-size: 26px; }
+      .modal-columns { grid-template-columns: 1fr; gap: 20px; }
+      .fields-row { grid-template-columns: 1fr; gap: 12px; }
+      .verdict-panel { min-height: 200px; }
+
+      /* Share panel */
+      .share-overlay { padding: 0; align-items: flex-end; }
+      .share-panel {
+        flex-direction: column;
+        padding: 20px 16px;
+        gap: 20px;
+        max-height: 90vh;
+        overflow-y: auto;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        border-bottom: none;
+      }
+      .share-divider { width: 100%; height: 1px; }
+      .share-controls { min-width: unset; }
+      .share-ratio-switcher { justify-content: flex-start; }
+      canvas#shareCard { max-height: 260px; }
+
+      /* Resume split */
+      .verdict-split { flex-direction: column !important; }
+
+      /* Banners */
+      .levelup-banner, .unlock-banner {
+        width: 90%;
+        padding: 24px 20px;
+      }
+    }
+
+    /* Extra small */
+    @media (max-width: 400px) {
+      .hero h1 { font-size: 52px; }
+      .tool-card { padding: 22px 16px; }
+      .modal { padding: 20px 14px; }
+    }
   </style>
 </head>
 <body>
@@ -2139,8 +2271,11 @@
       }
     }
 
-    window.addEventListener('scroll', updateScrollAnimations, { passive: true });
-    updateScrollAnimations();
+    // Only run scroll animation on desktop
+    if (window.innerWidth > 768) {
+      window.addEventListener('scroll', updateScrollAnimations, { passive: true });
+      updateScrollAnimations();
+    }
 
     // ── Scroll blur intensity ──
     const scrollFade = document.querySelector('.scroll-fade');
