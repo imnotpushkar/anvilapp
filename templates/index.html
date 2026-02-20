@@ -1208,6 +1208,163 @@
       z-index: 98;
     }
 
+    /* Rank Progression Modal */
+    .rank-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      backdrop-filter: blur(4px);
+    }
+    .rank-modal-overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .rank-modal {
+      background: var(--surface);
+      border: 1px solid var(--border-bright);
+      width: 100%;
+      max-width: 480px;
+      padding: 40px;
+      position: relative;
+      transform: translateY(20px);
+      transition: transform 0.3s;
+      max-height: 88vh;
+      overflow-y: auto;
+    }
+    .rank-modal-overlay.active .rank-modal { transform: translateY(0); }
+
+    .rank-modal-title {
+      font-family: var(--display);
+      font-size: 28px;
+      letter-spacing: 0.08em;
+      color: var(--text-bright);
+      margin-bottom: 4px;
+    }
+    .rank-modal-sub {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      margin-bottom: 32px;
+    }
+    .rank-list { display: flex; flex-direction: column; gap: 0; }
+
+    .rank-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      cursor: default;
+      transition: background 0.2s;
+    }
+    .rank-row:last-child { border-bottom: none; }
+
+    .rank-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      border: 2px solid var(--border-bright);
+      background: transparent;
+      transition: all 0.2s;
+    }
+    .rank-row.completed .rank-indicator {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    .rank-row.current .rank-indicator {
+      background: var(--accent2);
+      border-color: var(--accent2);
+      box-shadow: 0 0 8px rgba(255,204,0,0.6);
+    }
+
+    .rank-connector {
+      position: absolute;
+      left: 4px;
+      top: 28px;
+      width: 2px;
+      height: calc(100% - 14px);
+      background: var(--border);
+    }
+    .rank-row.completed .rank-connector { background: var(--accent); }
+    .rank-row:last-child .rank-connector { display: none; }
+
+    .rank-info { flex: 1; }
+    .rank-name {
+      font-family: var(--display);
+      font-size: 18px;
+      letter-spacing: 0.08em;
+      color: var(--text-dim);
+    }
+    .rank-row.completed .rank-name { color: var(--text-bright); }
+    .rank-row.current .rank-name { color: var(--accent2); }
+
+    .rank-xp-range {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+    .rank-unlock {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: #555;
+      margin-top: 4px;
+    }
+    .rank-row.completed .rank-unlock,
+    .rank-row.current .rank-unlock { color: var(--accent); }
+
+    .rank-you-are-here {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent2);
+      background: rgba(255,204,0,0.08);
+      border: 1px solid rgba(255,204,0,0.2);
+      padding: 3px 8px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .rank-progress-mini {
+      margin-top: 6px;
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+      width: 120px;
+    }
+    .rank-progress-mini-fill {
+      height: 100%;
+      background: var(--accent2);
+      border-radius: 2px;
+      transition: width 0.5s ease;
+    }
+
+    /* Make HUD level and XP block clickable */
+    .hud-block.hud-level,
+    .hud-xp-block {
+      cursor: pointer;
+    }
+    .hud-block.hud-level:hover .hud-value,
+    .hud-xp-block:hover .hud-xp-label {
+      color: var(--accent2);
+      transition: color 0.2s;
+    }
+
     /* Share button */
     .share-btn {
       margin-top: 14px;
@@ -1540,7 +1697,7 @@
 
   <!-- HUD -->
   <div class="hud">
-    <div class="hud-block hud-level">
+    <div class="hud-block hud-level" onclick="openRankModal()">
       <div class="hud-label">Rank</div>
       <div class="hud-value" id="levelLabel">LVL 1</div>
     </div>
@@ -1556,10 +1713,10 @@
       <div class="hud-label">Total XP</div>
       <div class="hud-value" id="hudXP">0</div>
     </div>
-    <div class="hud-xp-block">
+    <div class="hud-xp-block" onclick="openRankModal()">
       <div class="hud-xp-top">
         <span class="hud-xp-label">Progress to next level</span>
-        <span class="hud-xp-points" id="xpPoints">0 / 100 XP</span>
+        <span class="hud-xp-points" id="xpPoints">0 / 150 XP</span>
       </div>
       <div class="hud-xp-track">
         <div class="hud-xp-fill" id="xpFill"></div>
@@ -1567,10 +1724,20 @@
     </div>
   </div>
 
+  <!-- Rank Progression Modal -->
+  <div class="rank-modal-overlay" id="rankModal" onclick="if(event.target===this)closeRankModal()">
+    <div class="rank-modal">
+      <button class="modal-close" onclick="closeRankModal()">✕</button>
+      <div class="rank-modal-title">RANK PROGRESSION</div>
+      <div class="rank-modal-sub">// your path to sovereignty</div>
+      <div class="rank-list" id="rankList"></div>
+    </div>
+  </div>
+
   <!-- Level Up Banner -->
   <div class="levelup-banner" id="levelupBanner">
     <div class="levelup-title">⚡ LEVEL UP!</div>
-    <div class="levelup-sub" id="levelupSub">// you are now a TINKERER</div>
+    <div class="levelup-sub" id="levelupSub">// you are now an INTERN</div>
   </div>
 
   <div class="unlock-banner" id="unlockBanner">
@@ -1657,8 +1824,7 @@
         <div class="tool-name">SALARY ROASTER</div>
         <p class="tool-desc">Enter your salary, city, age and field. We'll tell you exactly how cooked you are — financially speaking.</p>
         <span class="tool-tag">Roast Me</span>
-        <div class="tool-xp">+25 XP per roast</div>
-      </div>
+        <div class="tool-xp">+25 XP per roast</div>      </div>
 
       <!-- Idea Checker -->
       <div class="tool-card card-idea" onclick="openModal('idea')">
@@ -1667,7 +1833,7 @@
         <div class="tool-name">IDEA CHECKER</div>
         <p class="tool-desc">Think you've got a million dollar idea? Let's find out if someone already built it, and if yours is actually better.</p>
         <span class="tool-tag">Validate</span>
-        <div class="tool-xp">+30 XP per check</div>
+        <div class="tool-xp">+35 XP per check</div>
       </div>
 
       <!-- Tech Stack Picker -->
@@ -1677,7 +1843,7 @@
         <div class="tool-name">STACK PICKER</div>
         <p class="tool-desc">Answer a few questions about your project and we'll tell you exactly what tech to use — no more analysis paralysis.</p>
         <span class="tool-tag">Pick My Stack</span>
-        <div class="tool-xp">+20 XP per pick</div>
+        <div class="tool-xp">+30 XP per pick</div>
       </div>
 
       <!-- Resume Roaster -->
@@ -1687,7 +1853,7 @@
         <div class="tool-name">RESUME ROASTER</div>
         <p class="tool-desc">Paste your resume or fill in your details. We'll fix your grammar, sharpen your bullets, and roast every mediocre line — in your favourite comic's style.</p>
         <span class="tool-tag">Roast My CV</span>
-        <div class="tool-xp">+35 XP per roast</div>
+        <div class="tool-xp">+30 XP per roast</div>
       </div>
 
     </div>
@@ -1939,11 +2105,14 @@
     let streak = parseInt(localStorage.getItem('fis_streak') || '0');
 
     const LEVELS = [
-      { name: 'NEWBIE', max: 100 },
-      { name: 'TINKERER', max: 250 },
-      { name: 'BUILDER', max: 500 },
-      { name: 'HACKER', max: 900 },
-      { name: 'WIZARD', max: Infinity }
+      { name: 'FRESHER',   max: 150 },
+      { name: 'INTERN',    max: 150 },
+      { name: 'JUGAADU',   max: 150 },
+      { name: 'BUILDER',   max: 150 },
+      { name: 'HACKER',    max: 150 },
+      { name: 'WIZARD',    max: 150 },
+      { name: 'LEGEND',    max: 150 },
+      { name: 'SOVEREIGN', max: Infinity }
     ];
 
     function getCurrentLevel() {
@@ -1952,7 +2121,7 @@
         if (xp < total + LEVELS[i].max) return { idx: i, name: LEVELS[i].name, earned: xp - total, max: LEVELS[i].max };
         total += LEVELS[i].max;
       }
-      return { idx: LEVELS.length - 1, name: 'WIZARD', earned: 999, max: 999 };
+      return { idx: LEVELS.length - 1, name: 'SOVEREIGN', earned: xp - 1050, max: 150 };
     }
 
     function updateUI() {
@@ -2028,11 +2197,11 @@
     const COMIC_UNLOCKS = [
       { value: 'abhishek_upmanyu', name: 'Abhishek Upmanyu', xpRequired: 0 },
       { value: 'samay_raina',      name: 'Samay Raina',      xpRequired: 0 },
-      { value: 'ravi_gupta',       name: 'Ravi Gupta',       xpRequired: 100 },
-      { value: 'anubhav_bassi',    name: 'Anubhav Singh Bassi', xpRequired: 350 },
-      { value: 'ashish_solanki',   name: 'Ashish Solanki',   xpRequired: 350 },
-      { value: 'kaustubh_aggarwal',name: 'Kaustubh Aggarwal',xpRequired: 850 },
-      { value: 'madhur_virli',     name: 'Madhur Virli',     xpRequired: 1750 },
+      { value: 'ravi_gupta',       name: 'Ravi Gupta',       xpRequired: 150 },
+      { value: 'anubhav_bassi',    name: 'Anubhav Singh Bassi', xpRequired: 450 },
+      { value: 'ashish_solanki',   name: 'Ashish Solanki',   xpRequired: 450 },
+      { value: 'kaustubh_aggarwal',name: 'Kaustubh Aggarwal',xpRequired: 750 },
+      { value: 'madhur_virli',     name: 'Madhur Virli',     xpRequired: 1050 },
     ];
 
     function applyComicLocks() {
@@ -2271,8 +2440,12 @@
     }
 
     initAnimationState();
+    updateScrollAnimations();
     window.addEventListener('scroll', updateScrollAnimations, { passive: true });
-    window.addEventListener('resize', initAnimationState);
+    window.addEventListener('resize', () => {
+      initAnimationState();
+      updateScrollAnimations();
+    });
 
     // ── Scroll blur intensity ──
     const scrollFade = document.querySelector('.scroll-fade');
@@ -2289,6 +2462,62 @@
 
     function closeModal(id) {
       document.getElementById(`modal-${id}`).classList.remove('active');
+    }
+
+    // ── Rank Progression Modal ──
+    const RANK_UNLOCKS = {
+      150:  'Unlocks: Ravi Gupta',
+      450:  'Unlocks: Anubhav Bassi + Ashish Solanki',
+      750:  'Unlocks: Kaustubh Aggarwal',
+      1050: 'Unlocks: Madhur Virli',
+    };
+
+    function openRankModal() {
+      const list = document.getElementById('rankList');
+      list.innerHTML = '';
+      let cumulative = 0;
+      const lvl = getCurrentLevel();
+
+      LEVELS.forEach((level, i) => {
+        const rankStart = cumulative;
+        const rankEnd = level.max === Infinity ? '∞' : cumulative + level.max;
+        const isCompleted = i < lvl.idx;
+        const isCurrent = i === lvl.idx;
+        const unlockNote = RANK_UNLOCKS[rankStart] || '';
+
+        const row = document.createElement('div');
+        row.className = `rank-row${isCompleted ? ' completed' : ''}${isCurrent ? ' current' : ''}`;
+
+        const progressPct = isCurrent ? Math.min(100, (lvl.earned / lvl.max) * 100) : isCompleted ? 100 : 0;
+        const xpLabel = level.max === Infinity
+          ? `${rankStart} XP+`
+          : `${rankStart} – ${rankEnd} XP`;
+
+        row.innerHTML = `
+          <div class="rank-connector"></div>
+          <div class="rank-indicator"></div>
+          <div class="rank-info">
+            <div class="rank-name">${level.name}</div>
+            <div class="rank-xp-range">${xpLabel}</div>
+            ${unlockNote ? `<div class="rank-unlock">🔓 ${unlockNote}</div>` : ''}
+            ${isCurrent ? `
+              <div class="rank-progress-mini">
+                <div class="rank-progress-mini-fill" style="width:${progressPct}%"></div>
+              </div>
+            ` : ''}
+          </div>
+          ${isCurrent ? '<div class="rank-you-are-here">YOU ARE HERE</div>' : ''}
+        `;
+
+        list.appendChild(row);
+        if (level.max !== Infinity) cumulative += level.max;
+      });
+
+      document.getElementById('rankModal').classList.add('active');
+    }
+
+    function closeRankModal() {
+      document.getElementById('rankModal').classList.remove('active');
     }
 
     // Close on overlay click
@@ -2328,7 +2557,7 @@
       document.getElementById('verdict-waiting').style.display = 'none';
       document.getElementById('verdict-result').style.display = 'block';
       document.getElementById('roaster-text').innerText = data.message;
-      const earned = addXP(25);
+      const earned = addXP(25); // Salary Roaster
       document.getElementById('roaster-xp').innerText = `+${earned} XP earned!`;
       document.getElementById('roaster-share-btn').classList.add('visible');
     }
@@ -2345,7 +2574,7 @@
       document.getElementById('idea-verdict-waiting').style.display = 'none';
       document.getElementById('idea-verdict-result').style.display = 'block';
       document.getElementById('idea-text').innerText = data.message;
-      const earned = addXP(30);
+      const earned = addXP(35); // Idea Checker
       document.getElementById('idea-xp').innerText = `+${earned} XP earned!`;
       document.getElementById('idea-share-btn').classList.add('visible');
     }
@@ -2363,7 +2592,7 @@
       document.getElementById('stack-verdict-waiting').style.display = 'none';
       document.getElementById('stack-verdict-result').style.display = 'block';
       document.getElementById('stack-text').innerText = data.message;
-      const earned = addXP(20);
+      const earned = addXP(30); // Stack Picker
       document.getElementById('stack-xp').innerText = `+${earned} XP earned!`;
       document.getElementById('stack-share-btn').classList.add('visible');
     }
@@ -2409,7 +2638,7 @@
       document.getElementById('resume-verdict-result').style.display = 'flex';
       document.getElementById('resume-roast-text').innerText = roastText;
       document.getElementById('resume-fixed-text').innerText = fixedText;
-      const earned = addXP(35);
+      const earned = addXP(30); // Resume Roaster
       document.getElementById('resume-xp').innerText = `+${earned} XP earned!`;
       showXPFloat(earned, btn);
       document.getElementById('resume-share-btn').classList.add('visible');
