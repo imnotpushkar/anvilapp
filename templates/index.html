@@ -372,7 +372,8 @@
       padding: 80px 48px 60px;
       max-width: 1200px;
       margin: 0 auto;
-      animation: fadeUp 0.6s ease both;
+      transition: transform 0.08s linear, opacity 0.08s linear;
+      will-change: transform, opacity;
     }
 
     /* Hero split layout */
@@ -383,7 +384,7 @@
       align-items: start;
     }
 
-    .hero-left { display: flex; flex-direction: column; align-items: center; }
+    .hero-left { display: flex; flex-direction: column; }
     .hero-right { padding-top: 24px; }
 
     /* Todo panel */
@@ -518,10 +519,7 @@
     .roadmap-item:not(.done) .todo-check { color: var(--text-dim); }
 
     /* Tool card zip-in animation */
-    .tool-card {
-      opacity: 0;
-      transform: translateY(60px);
-    }
+    
 
     .tool-card.zip-in {
       animation: zipIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -544,7 +542,6 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      align-self: flex-start;
     }
 
     .hero-eyebrow::before {
@@ -615,15 +612,12 @@
       max-width: 480px;
       line-height: 1.7;
       margin-bottom: 48px;
-      text-align: center;
-      align-self: center;
     }
 
     .hero-stats {
       display: flex;
       gap: 0;
       margin-top: 8px;
-      align-self: center;
     }
 
     .stat {
@@ -667,6 +661,8 @@
       padding: 0 48px 100px;
       max-width: 1100px;
       margin: 0 auto;
+      transition: transform 0.08s linear, opacity 0.08s linear;
+      will-change: transform, opacity;
     }
 
     .section-label {
@@ -699,10 +695,10 @@
       border: 1px solid var(--border);
       padding: 40px 36px;
       cursor: pointer;
-      transition: border-color 0.3s, background 0.3s, box-shadow 0.3s;
+      transition: border-color 0.3s, background 0.3s, box-shadow 0.3s, transform 0.08s linear, opacity 0.08s linear;
       position: relative;
       overflow: hidden;
-      animation: fadeUp 0.5s ease both;
+      will-change: transform, opacity;
     }
 
     .tool-card:nth-child(2) { animation-delay: 0.1s; }
@@ -2088,21 +2084,62 @@
 
     renderTodos();
 
-    // ── Tool card zip-in on scroll ──
-    const cards = document.querySelectorAll('.tool-card');
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const card = entry.target;
-          const idx = Array.from(cards).indexOf(card);
-          setTimeout(() => {
-            card.classList.add('zip-in');
-          }, idx * 80);
-          observer.unobserve(card);
-        }
-      });
-    }, { threshold: 0.1 });
-    cards.forEach(card => observer.observe(card));
+    // ── Scroll-driven section animations ──
+    const heroSection = document.querySelector('.hero');
+    const toolsSection = document.querySelector('.tools-section');
+    const allCards = document.querySelectorAll('.tool-card');
+
+    function updateScrollAnimations() {
+      const scrollY = window.scrollY;
+      const heroHeight = heroSection.offsetHeight;
+      const triggerPoint = heroHeight * 0.35;
+
+      if (scrollY > triggerPoint) {
+        // Scrolling into tools — hero exits up, tools enter from below
+        const progress = Math.min((scrollY - triggerPoint) / (heroHeight * 0.5), 1);
+        const heroOffset = -progress * 80;
+        const heroOpacity = 1 - progress * 1.2;
+        heroSection.style.transform = `translateY(${heroOffset}px)`;
+        heroSection.style.opacity = Math.max(heroOpacity, 0);
+
+        // Tools slide in from below
+        const toolsProgress = Math.min(progress * 1.2, 1);
+        const toolsOffset = (1 - toolsProgress) * 80;
+        toolsSection.style.transform = `translateY(${toolsOffset}px)`;
+        toolsSection.style.opacity = toolsProgress;
+
+        // Stagger each card
+        allCards.forEach((card, i) => {
+          const cardDelay = i * 0.06;
+          const cardProgress = Math.min((toolsProgress - cardDelay) / (1 - cardDelay * 3), 1);
+          const cardOffset = (1 - Math.max(cardProgress, 0)) * 60;
+          card.style.transform = `translateY(${cardOffset}px)`;
+          card.style.opacity = Math.max(cardProgress, 0);
+        });
+
+      } else {
+        // Scrolling back up — hero comes back, tools retreat
+        heroSection.style.transform = 'translateY(0)';
+        heroSection.style.opacity = '1';
+        toolsSection.style.transform = 'translateY(80px)';
+        toolsSection.style.opacity = '0';
+        allCards.forEach(card => {
+          card.style.transform = 'translateY(60px)';
+          card.style.opacity = '0';
+        });
+      }
+    }
+
+    // Initial state
+    toolsSection.style.opacity = '0';
+    toolsSection.style.transform = 'translateY(80px)';
+    allCards.forEach(card => {
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(60px)';
+    });
+
+    window.addEventListener('scroll', updateScrollAnimations, { passive: true });
+    updateScrollAnimations();
 
     // ── Scroll blur intensity ──
     const scrollFade = document.querySelector('.scroll-fade');
