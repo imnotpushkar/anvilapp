@@ -769,6 +769,110 @@
     }
     .logout-btn-confirm:hover { background: #cc0000; border-color: #cc0000; }
 
+    /* HAMBURGER + DRAWER */
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 4px;
+      z-index: 201;
+    }
+    .hamburger span {
+      display: block;
+      width: 22px;
+      height: 2px;
+      background: var(--text-bright);
+      border-radius: 2px;
+      transition: all 0.3s;
+    }
+    .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger.open span:nth-child(2) { opacity: 0; }
+    .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    .drawer-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 199;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      backdrop-filter: blur(4px);
+    }
+    .drawer-overlay.open { opacity: 1; pointer-events: all; }
+
+    .drawer {
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      width: 280px;
+      background: var(--surface);
+      border-right: 1px solid var(--border-bright);
+      z-index: 200;
+      transform: translateX(-100%);
+      transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+      display: flex;
+      flex-direction: column;
+    }
+    .drawer.open { transform: translateX(0); }
+
+    .drawer-header {
+      padding: 24px 24px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .drawer-logo {
+      font-family: var(--display);
+      font-size: 24px;
+      color: var(--text-bright);
+      letter-spacing: 0.05em;
+    }
+    .drawer-logo span { color: var(--accent); }
+    .drawer-tagline {
+      font-family: var(--mono);
+      font-size: 8px;
+      letter-spacing: 0.3em;
+      color: var(--accent);
+      margin-top: 2px;
+    }
+
+    .drawer-nav { padding: 16px 0; flex: 1; }
+
+    .drawer-link {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 24px;
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      text-decoration: none;
+      cursor: pointer;
+      transition: color 0.2s, background 0.2s;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+    }
+    .drawer-link:hover { color: var(--accent); background: rgba(255,77,0,0.05); }
+    .drawer-link-icon { font-size: 16px; width: 20px; text-align: center; }
+
+    .drawer-footer {
+      padding: 20px 24px;
+      border-top: 1px solid var(--border);
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+    }
+
+    @media (max-width: 768px) {
+      .hamburger { display: flex; }
+    }
+
     /* NAV AUTHOR TAG */
     .nav-author-tag {
       font-family: var(--mono);
@@ -2004,318 +2108,6 @@
       .tool-card { padding: 22px 16px; }
       .modal { padding: 20px 14px; }
     }
-    /* LEADERBOARD MODAL */
-    .lb-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.88);
-      z-index: 300;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.3s;
-      backdrop-filter: blur(6px);
-    }
-    .lb-overlay.active { opacity: 1; pointer-events: all; }
-
-    .lb-modal {
-      background: var(--surface);
-      border: 1px solid var(--border-bright);
-      width: 100%;
-      max-width: 620px;
-      position: relative;
-      transform: translateY(24px);
-      transition: transform 0.3s;
-      max-height: 88vh;
-      display: flex;
-      flex-direction: column;
-    }
-    .lb-overlay.active .lb-modal { transform: translateY(0); }
-
-    .lb-header {
-      padding: 28px 32px 0;
-      border-bottom: 1px solid var(--border);
-    }
-    .lb-title {
-      font-family: var(--display);
-      font-size: 32px;
-      letter-spacing: 0.08em;
-      color: var(--text-bright);
-      margin-bottom: 4px;
-    }
-    .lb-sub {
-      font-family: var(--mono);
-      font-size: 9px;
-      letter-spacing: 0.2em;
-      color: var(--text-dim);
-      text-transform: uppercase;
-      margin-bottom: 20px;
-    }
-    .lb-close {
-      position: absolute;
-      top: 20px; right: 20px;
-      background: none;
-      border: none;
-      color: var(--text-dim);
-      font-size: 18px;
-      cursor: pointer;
-      transition: color 0.2s;
-    }
-    .lb-close:hover { color: var(--text-bright); }
-
-    .lb-tabs {
-      display: flex;
-      border-bottom: 1px solid var(--border);
-    }
-    .lb-tab {
-      flex: 1;
-      background: none;
-      border: none;
-      border-bottom: 2px solid transparent;
-      color: var(--text-dim);
-      font-family: var(--mono);
-      font-size: 9px;
-      letter-spacing: 0.15em;
-      padding: 14px 16px;
-      cursor: pointer;
-      transition: all 0.2s;
-      text-transform: uppercase;
-    }
-    .lb-tab:hover { color: var(--text); }
-    .lb-tab.active { color: var(--accent2); border-bottom-color: var(--accent2); }
-
-    .lb-body {
-      flex: 1;
-      overflow-y: auto;
-      padding: 0;
-    }
-
-    .lb-section { display: none; }
-    .lb-section.active { display: block; }
-
-    /* Leaderboard rows */
-    .lb-row {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      padding: 14px 32px;
-      border-bottom: 1px solid var(--border);
-      transition: background 0.15s;
-    }
-    .lb-row:hover { background: rgba(255,255,255,0.02); }
-    .lb-row.top-1 { border-left: 3px solid #FFD700; }
-    .lb-row.top-2 { border-left: 3px solid #C0C0C0; }
-    .lb-row.top-3 { border-left: 3px solid #CD7F32; }
-
-    .lb-rank {
-      font-family: var(--display);
-      font-size: 20px;
-      color: var(--text-dim);
-      width: 32px;
-      text-align: center;
-      flex-shrink: 0;
-    }
-    .lb-row.top-1 .lb-rank { color: #FFD700; }
-    .lb-row.top-2 .lb-rank { color: #C0C0C0; }
-    .lb-row.top-3 .lb-rank { color: #CD7F32; }
-
-    .lb-avatar {
-      width: 34px; height: 34px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 1px solid var(--border-bright);
-      flex-shrink: 0;
-      background: var(--border);
-    }
-    .lb-avatar-placeholder {
-      width: 34px; height: 34px;
-      border-radius: 50%;
-      background: var(--border);
-      border: 1px solid var(--border-bright);
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
-    }
-
-    .lb-info { flex: 1; min-width: 0; }
-    .lb-name {
-      font-family: var(--mono);
-      font-size: 12px;
-      color: var(--text-bright);
-      letter-spacing: 0.05em;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .lb-level {
-      font-family: var(--mono);
-      font-size: 9px;
-      color: var(--text-dim);
-      letter-spacing: 0.1em;
-      margin-top: 2px;
-    }
-
-    .lb-xp {
-      font-family: var(--display);
-      font-size: 20px;
-      color: var(--accent);
-      letter-spacing: 0.05em;
-      flex-shrink: 0;
-    }
-    .lb-xp-label {
-      font-family: var(--mono);
-      font-size: 8px;
-      color: var(--text-dim);
-      letter-spacing: 0.1em;
-      text-align: right;
-    }
-
-    .lb-empty {
-      padding: 48px 32px;
-      text-align: center;
-      font-family: var(--mono);
-      font-size: 11px;
-      color: var(--text-dim);
-      letter-spacing: 0.1em;
-    }
-
-    .lb-loading {
-      padding: 48px 32px;
-      text-align: center;
-      font-family: var(--mono);
-      font-size: 11px;
-      color: var(--text-dim);
-      letter-spacing: 0.1em;
-      animation: pulse 1.5s ease-in-out infinite;
-    }
-    @keyframes pulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
-
-    /* Personal tab */
-    .lb-personal-wrap { padding: 28px 32px; }
-
-    .lb-personal-card {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      padding: 20px;
-      border: 1px solid var(--border-bright);
-      background: rgba(255,77,0,0.04);
-      border-left: 3px solid var(--accent);
-      margin-bottom: 24px;
-    }
-    .lb-personal-avatar {
-      width: 52px; height: 52px;
-      border-radius: 50%;
-      border: 2px solid var(--accent);
-      object-fit: cover;
-      flex-shrink: 0;
-    }
-    .lb-personal-name {
-      font-family: var(--display);
-      font-size: 24px;
-      color: var(--text-bright);
-      letter-spacing: 0.05em;
-    }
-    .lb-personal-rank {
-      font-family: var(--mono);
-      font-size: 10px;
-      color: var(--accent);
-      letter-spacing: 0.15em;
-      margin-top: 4px;
-    }
-
-    .lb-personal-stats {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 2px;
-      margin-bottom: 24px;
-    }
-    .lb-stat-box {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      padding: 16px;
-      text-align: center;
-    }
-    .lb-stat-num {
-      font-family: var(--display);
-      font-size: 28px;
-      line-height: 1;
-      color: var(--text-bright);
-      margin-bottom: 6px;
-    }
-    .lb-stat-label {
-      font-family: var(--mono);
-      font-size: 8px;
-      letter-spacing: 0.15em;
-      color: var(--text-dim);
-      text-transform: uppercase;
-    }
-
-    .lb-achievements-title {
-      font-family: var(--mono);
-      font-size: 9px;
-      letter-spacing: 0.2em;
-      color: var(--text-dim);
-      text-transform: uppercase;
-      margin-bottom: 12px;
-    }
-    .lb-achievements-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 8px;
-    }
-    .lb-achievement {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 14px;
-      border: 1px solid var(--border);
-      background: var(--bg);
-      font-family: var(--mono);
-      font-size: 11px;
-      color: var(--text);
-    }
-    .lb-achievement.locked { opacity: 0.35; filter: grayscale(1); }
-    .lb-achievement-icon { font-size: 16px; flex-shrink: 0; }
-
-    .lb-guest-msg {
-      padding: 48px 32px;
-      text-align: center;
-    }
-    .lb-guest-msg p {
-      font-family: var(--mono);
-      font-size: 12px;
-      color: var(--text-dim);
-      letter-spacing: 0.08em;
-      margin-bottom: 20px;
-    }
-    .lb-signin-btn {
-      font-family: var(--mono);
-      font-size: 11px;
-      letter-spacing: 0.15em;
-      padding: 12px 28px;
-      background: var(--accent);
-      border: none;
-      color: #fff;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .lb-signin-btn:hover { background: #ff6620; }
-
-    @media (max-width: 768px) {
-      .lb-modal { max-width: 100%; margin: 0; max-height: 92vh; }
-      .lb-overlay { padding: 0; align-items: flex-end; }
-      .lb-row { padding: 12px 20px; }
-      .lb-personal-wrap { padding: 20px; }
-      .lb-personal-stats { grid-template-columns: repeat(3,1fr); }
-      .lb-achievements-grid { grid-template-columns: 1fr; }
-    }
-
     /* FOOTER */
     .site-footer {
       border-top: 1px solid var(--border);
@@ -2345,6 +2137,9 @@
 
   <!-- NAV -->
   <nav>
+    <button class="hamburger" id="hamburger" onclick="toggleDrawer()">
+      <span></span><span></span><span></span>
+    </button>
     <div class="nav-logo">
       <div class="nav-sparks"><span></span><span></span><span></span><span></span><span></span></div>
       <div class="nav-logo-name">ANVIL</div>
@@ -2352,9 +2147,9 @@
       <span class="nav-author-tag">by Pushkar Gupta</span>
     </div>
     <ul class="nav-links">
-      <li><a href="#">Tools</a></li>
+      <li><a href="#" onclick="navScrollTo('tools'); return false;">Tools</a></li>
       <li><a href="#" onclick="openLeaderboard(); return false;">Leaderboard</a></li>
-      <li><a href="#">About</a></li>
+      <li><a href="#" onclick="navScrollTo('about'); return false;">About</a></li>
     </ul>
     <div class="nav-auth" id="nav-auth">
       <a href="/auth/login" class="nav-login-btn" id="nav-login-btn">⬡ SIGN IN</a>
@@ -2490,7 +2285,7 @@
   </section>
 
   <!-- ABOUT -->
-  <section class="about-section">
+  <section class="about-section" id="about">
     <div class="about-glitch-wrap">
       <div class="about-glitch-header">
         <span class="about-glitch-tag">// WHO_BUILT_THIS.exe</span>
@@ -2515,7 +2310,7 @@
   </section>
 
   <!-- TOOLS -->
-  <section class="tools-section">
+  <section class="tools-section" id="tools">
     <div class="section-label">Choose your weapon</div>
     <div class="tools-grid">
 
@@ -2893,173 +2688,39 @@
     }
 
     // ── Auth state ──
-    // ── LEADERBOARD ──
-    const LEVEL_NAMES = ['FRESHER','INTERN','JUNIOR','SENIOR','LEAD','WIZARD'];
-    const LEVEL_THRESHOLDS = [0, 150, 350, 700, 1200, 2000];
-
-    function getLevelName(xp) {
-      for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
-        if (xp >= LEVEL_THRESHOLDS[i]) return LEVEL_NAMES[i];
-      }
-      return 'FRESHER';
+    // ── DRAWER ──
+    function toggleDrawer() {
+      const drawer = document.getElementById('drawer');
+      const overlay = document.getElementById('drawerOverlay');
+      const hamburger = document.getElementById('hamburger');
+      const isOpen = drawer.classList.contains('open');
+      drawer.classList.toggle('open', !isOpen);
+      overlay.classList.toggle('open', !isOpen);
+      hamburger.classList.toggle('open', !isOpen);
     }
 
-    function rankEmoji(rank) {
-      if (rank === 1) return '🥇';
-      if (rank === 2) return '🥈';
-      if (rank === 3) return '🥉';
-      return rank;
+    function closeDrawer() {
+      document.getElementById('drawer').classList.remove('open');
+      document.getElementById('drawerOverlay').classList.remove('open');
+      document.getElementById('hamburger').classList.remove('open');
     }
 
-    function rankClass(rank) {
-      if (rank === 1) return 'top-1';
-      if (rank === 2) return 'top-2';
-      if (rank === 3) return 'top-3';
-      return '';
+    function drawerNav(target) {
+      closeDrawer();
+      setTimeout(() => {
+        if (target === 'leaderboard') { openLeaderboard(); }
+        else { navScrollTo(target); }
+      }, 300);
     }
 
-    function buildLbRow(entry) {
-      const avatar = entry.avatar_url
-        ? `<img class="lb-avatar" src="${entry.avatar_url}" alt="avatar"/>`
-        : `<div class="lb-avatar-placeholder">👤</div>`;
-      return `
-        <div class="lb-row ${rankClass(entry.rank)}">
-          <div class="lb-rank">${rankEmoji(entry.rank)}</div>
-          ${avatar}
-          <div class="lb-info">
-            <div class="lb-name">${entry.display_name || 'Anonymous'}</div>
-            <div class="lb-level">${getLevelName(entry.xp)}</div>
-          </div>
-          <div style="text-align:right">
-            <div class="lb-xp">${entry.xp}</div>
-            <div class="lb-xp-label">XP</div>
-          </div>
-        </div>`;
+    function navScrollTo(target) {
+      const el = document.getElementById(target);
+      if (!el) return;
+      const navH = document.querySelector('nav').offsetHeight;
+      const hudH = document.querySelector('.hud').offsetHeight;
+      const top = el.getBoundingClientRect().top + window.scrollY - navH - hudH - 16;
+      window.scrollTo({ top, behavior: 'smooth' });
     }
-
-    const ALL_ACHIEVEMENTS = [
-      { id: 'first_blood',         icon: '🩸', name: 'First Blood',          desc: 'Used your first tool' },
-      { id: 'financially_deceased',icon: '💀', name: 'Financially Deceased',  desc: 'Roasted on a low salary' },
-      { id: 'anvil_veteran',       icon: '⚡', name: 'ANVIL Veteran',         desc: 'Earned 500 XP' },
-      { id: 'resume_arc',          icon: '📄', name: 'Resume Arc',            desc: '3 resume roasts' },
-      { id: 'comic_collector',     icon: '🎭', name: 'Comic Collector',       desc: 'All styles unlocked' },
-      { id: 'clown_input',         icon: '🤡', name: 'Clown Input',           desc: 'Triggered absurd salary roast' },
-      { id: 'seven_day_streak',    icon: '🔥', name: '7 Day Streak',          desc: '7 consecutive days' },
-      { id: 'stack_overflowed',    icon: '⚙️', name: 'Stack Overflowed',      desc: '5 stacks in one session' },
-      { id: 'idea_assassin',       icon: '🗡️', name: 'Idea Assassin',         desc: '10 idea checks' },
-      { id: 'xp_hoarder',         icon: '💰', name: 'XP Hoarder',            desc: '200 XP in one day' },
-      { id: 'comeback_kid',        icon: '🔄', name: 'Comeback Kid',          desc: 'Restarted streak within 48hrs' },
-      { id: 'showoff',             icon: '📢', name: 'Showoff',               desc: 'Shared a roast card' },
-    ];
-
-    async function loadGlobalLb() {
-      try {
-        const res = await fetch('/api/leaderboard');
-        const data = await res.json();
-        const list = document.getElementById('lb-global-list');
-        document.getElementById('lb-global-loading').style.display = 'none';
-        if (!data.length) {
-          list.innerHTML = '<div class="lb-empty">// no warriors yet. be the first.</div>';
-          return;
-        }
-        list.innerHTML = data.map(buildLbRow).join('');
-      } catch(e) {
-        document.getElementById('lb-global-loading').innerText = '// failed to load. try again.';
-      }
-    }
-
-    async function loadWeeklyLb() {
-      try {
-        const res = await fetch('/api/leaderboard/weekly');
-        const data = await res.json();
-        const list = document.getElementById('lb-weekly-list');
-        document.getElementById('lb-weekly-loading').style.display = 'none';
-        if (!data.length) {
-          list.innerHTML = '<div class="lb-empty">// nobody has grinded this week yet. go earn some XP.</div>';
-          return;
-        }
-        list.innerHTML = data.map(buildLbRow).join('');
-      } catch(e) {
-        document.getElementById('lb-weekly-loading').innerText = '// failed to load. try again.';
-      }
-    }
-
-    async function loadPersonalLb() {
-      const content = document.getElementById('lb-personal-content');
-      if (!window.__anvilUser) {
-        content.innerHTML = `
-          <div class="lb-guest-msg">
-            <p>// sign in to track your rank, streak, and achievements.</p>
-            <button class="lb-signin-btn" onclick="window.location.href='/auth/login'">⬡ SIGN IN WITH GOOGLE</button>
-          </div>`;
-        return;
-      }
-      content.innerHTML = '<div class="lb-loading">// loading your stats...</div>';
-      try {
-        const res = await fetch('/api/leaderboard/personal');
-        const d = await res.json();
-        const unlockedIds = new Set((d.achievements || []).map(a => a.achievement_id));
-        const achievementsHtml = ALL_ACHIEVEMENTS.map(a => `
-          <div class="lb-achievement ${unlockedIds.has(a.id) ? '' : 'locked'}">
-            <span class="lb-achievement-icon">${a.icon}</span>
-            <span>${a.name}</span>
-          </div>`).join('');
-
-        content.innerHTML = `
-          <div class="lb-personal-wrap">
-            <div class="lb-personal-card">
-              <img class="lb-personal-avatar" src="${d.avatar || ''}" alt="avatar" onerror="this.style.display='none'"/>
-              <div>
-                <div class="lb-personal-name">${d.name || 'Anonymous'}</div>
-                <div class="lb-personal-rank">// GLOBAL RANK #${d.rank} · ${getLevelName(d.xp)}</div>
-              </div>
-            </div>
-            <div class="lb-personal-stats">
-              <div class="lb-stat-box">
-                <div class="lb-stat-num" style="color:var(--accent)">${d.xp}</div>
-                <div class="lb-stat-label">Total XP</div>
-              </div>
-              <div class="lb-stat-box">
-                <div class="lb-stat-num" style="color:#ff6b35">${d.streak}🔥</div>
-                <div class="lb-stat-label">Streak</div>
-              </div>
-              <div class="lb-stat-box">
-                <div class="lb-stat-num" style="color:#00e5ff">${d.tools_used}</div>
-                <div class="lb-stat-label">Tools Used</div>
-              </div>
-            </div>
-            <div class="lb-achievements-title">// achievements</div>
-            <div class="lb-achievements-grid">${achievementsHtml}</div>
-          </div>`;
-      } catch(e) {
-        content.innerHTML = '<div class="lb-empty">// failed to load your stats.</div>';
-      }
-    }
-
-    let lbLoaded = { global: false, weekly: false, personal: false };
-
-    function openLeaderboard() {
-      document.getElementById('lbOverlay').classList.add('active');
-      if (!lbLoaded.global) { loadGlobalLb(); lbLoaded.global = true; }
-    }
-
-    function closeLeaderboard() {
-      document.getElementById('lbOverlay').classList.remove('active');
-    }
-
-    function switchLbTab(tab) {
-      ['global','weekly','personal'].forEach(t => {
-        document.getElementById(`lb-${t}`).classList.toggle('active', t === tab);
-        document.getElementById(`lb-tab-${t}`).classList.toggle('active', t === tab);
-      });
-      if (tab === 'weekly' && !lbLoaded.weekly) { loadWeeklyLb(); lbLoaded.weekly = true; }
-      if (tab === 'personal' && !lbLoaded.personal) { loadPersonalLb(); lbLoaded.personal = true; }
-    }
-
-    // Close leaderboard on Escape
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Escape') closeLeaderboard();
-    });
 
     function confirmLogout() {
       document.getElementById('logoutConfirm').classList.add('show');
@@ -3936,41 +3597,27 @@
     <span class="footer-credit">© 2025 Pushkar Gupta</span>
   </footer>
 
-  <!-- LEADERBOARD MODAL -->
-  <div class="lb-overlay" id="lbOverlay" onclick="if(event.target===this)closeLeaderboard()">
-    <div class="lb-modal">
-      <button class="lb-close" onclick="closeLeaderboard()">✕</button>
-      <div class="lb-header">
-        <div class="lb-title">LEADERBOARD</div>
-        <div class="lb-sub">// who's getting roasted the most</div>
-        <div class="lb-tabs">
-          <button class="lb-tab active" id="lb-tab-global" onclick="switchLbTab('global')">⚡ GLOBAL</button>
-          <button class="lb-tab" id="lb-tab-weekly" onclick="switchLbTab('weekly')">🔥 THIS WEEK</button>
-          <button class="lb-tab" id="lb-tab-personal" onclick="switchLbTab('personal')">👤 PERSONAL</button>
-        </div>
-      </div>
-
-      <div class="lb-body">
-
-        <!-- GLOBAL TAB -->
-        <div class="lb-section active" id="lb-global">
-          <div class="lb-loading" id="lb-global-loading">// loading rankings...</div>
-          <div id="lb-global-list"></div>
-        </div>
-
-        <!-- WEEKLY TAB -->
-        <div class="lb-section" id="lb-weekly">
-          <div class="lb-loading" id="lb-weekly-loading">// loading this week's grind...</div>
-          <div id="lb-weekly-list"></div>
-        </div>
-
-        <!-- PERSONAL TAB -->
-        <div class="lb-section" id="lb-personal">
-          <div id="lb-personal-content"></div>
-        </div>
-
+  <!-- MOBILE DRAWER -->
+  <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+  <div class="drawer" id="drawer">
+    <div class="drawer-header">
+      <div>
+        <div class="drawer-logo">AN<span>V</span>IL</div>
+        <div class="drawer-tagline">Forged in Satire</div>
       </div>
     </div>
+    <nav class="drawer-nav">
+      <button class="drawer-link" onclick="drawerNav('tools')">
+        <span class="drawer-link-icon">⚙️</span> Tools
+      </button>
+      <button class="drawer-link" onclick="drawerNav('leaderboard')">
+        <span class="drawer-link-icon">⚡</span> Leaderboard
+      </button>
+      <button class="drawer-link" onclick="drawerNav('about')">
+        <span class="drawer-link-icon">👤</span> About
+      </button>
+    </nav>
+    <div class="drawer-footer">// built different. roasted fresh.</div>
   </div>
 
   <!-- Logout Confirmation -->
