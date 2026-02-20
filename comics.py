@@ -3,7 +3,65 @@ Comic style prompt library for Forged in Satire.
 Each function returns a system prompt that shapes how Groq roasts the user.
 """
 
+ABSURD_NUMBERS = {1, 69, 420, 1337, 999, 9999, 99999, 999999, 9999999}
+
+def is_absurd_salary(salary):
+    try:
+        s = int(salary)
+        if s <= 0:
+            return True, "zero_or_negative"
+        if s < 1000:
+            return True, "too_low"
+        if s > 1000000:
+            return True, "too_high"
+        if s in ABSURD_NUMBERS:
+            return True, "joke_number"
+        return False, None
+    except (ValueError, TypeError):
+        return True, "not_a_number"
+
+def get_absurd_salary_prompt(comic, salary, city, age, field, reason):
+    base_details = f"Age: {age}, City: {city}, Field: {field}"
+
+    reason_context = {
+        "zero_or_negative": f"They entered ₹{salary} as their salary. Zero or negative. They are either testing the app, unemployed, or in debt.",
+        "too_low": f"They entered ₹{salary}/month as their salary. That is less than ₹1000. That is not a salary. That is a rounding error.",
+        "too_high": f"They entered ₹{salary}/month. That is over ₹10 lakh a month. Either this person is Mukesh Ambani's intern or they are completely lying.",
+        "joke_number": f"They entered ₹{salary} as their salary. A joke number. They are not here to be roasted — they are here to waste everyone's time.",
+        "not_a_number": f"They did not even enter a number. They typed '{salary}'. Incredible.",
+    }
+
+    context = reason_context.get(reason, f"They entered '{salary}' as their salary which makes no sense.")
+
+    style_notes = {
+        "ravi_gupta": "Ravi Gupta style — start as if you're going to take it seriously, nod along, then deadpan devastate them for the absurd input.",
+        "abhishek_upmanyu": "Abhishek Upmanyu style — rapid-fire, exhausted, layer the punches. Call out how unserious this input is with the energy of someone who has seen too much.",
+        "anubhav_bassi": "Anubhav Singh Bassi style — build a short story about how you also once lied about something like this, then bring it back to them.",
+        "madhur_virli": "Madhur Virli style — dark, blunt, uncomfortable. Call it out like the IIT placement committee would.",
+        "kaustubh_aggarwal": "Kaustubh Aggarwal style — Delhi energy, casual on the surface, devastating underneath. Sound like a friend who just caught them lying.",
+        "ashish_solanki": "Ashish Solanki style — compare this to something a middle-class Indian family member would do. Warm but cutting.",
+        "samay_raina": "Samay Raina style — treat this like a chess blunder. Analyze the mistake with gen-z internet energy and mild disappointment.",
+    }
+
+    style = style_notes.get(comic, style_notes["abhishek_upmanyu"])
+
+    return f"""You are roasting someone who entered an absurd salary value into a roasting app.
+
+Context: {context}
+Their other details: {base_details}
+Comic style: {style}
+
+Do NOT roast their actual salary as if it were real. Instead, roast them FOR entering this absurd number — call out the bad input itself with humor.
+Stay fully in the comedian's voice and style throughout.
+Keep it to 2-3 sentences. Punchy, funny, in character. No explanations, no disclaimers — just the roast."""
+
+
 def get_comic_prompt(comic, salary, city, age, field):
+    # Check for absurd salary before building normal prompt
+    absurd, reason = is_absurd_salary(salary)
+    if absurd:
+        return get_absurd_salary_prompt(comic, salary, city, age, field, reason)
+
     base_details = f"Age: {age}, City: {city}, Field: {field}, Monthly Salary: Rs.{salary}"
 
     prompts = {
