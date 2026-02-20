@@ -81,7 +81,7 @@
       color: var(--text-bright);
       display: flex;
       flex-direction: column;
-      align-items: center;
+      align-items: flex-start;
       gap: 0px;
       line-height: 1;
     }
@@ -1213,140 +1213,6 @@
       max-height: 400px;
       box-shadow: 0 0 40px rgba(0,0,0,0.6);
     }
-  
-    /* ── MOBILE RESPONSIVE ── */
-    @media (max-width: 768px) {
-
-      /* Nav */
-      .nav {
-        padding: 0 20px;
-        height: 52px;
-      }
-      .nav-links {
-        display: none;
-      }
-
-      /* HUD bar — scroll horizontally on mobile */
-      .hud {
-        padding: 0 16px;
-        gap: 0;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-      }
-      .hud-item {
-        padding: 0 14px;
-        min-width: fit-content;
-        flex-shrink: 0;
-      }
-      .hud-item:first-child { padding-left: 0; }
-      .hud-progress {
-        min-width: 120px;
-        flex-shrink: 0;
-      }
-      .hud-label { font-size: 8px; }
-      .hud-value { font-size: 13px; }
-
-      /* Hero */
-      .hero {
-        padding: 60px 20px 50px;
-      }
-      .hero-eyebrow { font-size: 10px; }
-      .hero-title {
-        font-size: clamp(64px, 18vw, 120px);
-        line-height: 0.9;
-      }
-      .hero-sub { font-size: 14px; }
-      .hero-stats {
-        gap: 24px;
-        flex-wrap: wrap;
-      }
-      .hero-stat-num { font-size: 36px; }
-
-      /* Section padding */
-      .section {
-        padding: 40px 20px;
-      }
-      .section-label { font-size: 9px; }
-
-      /* Tools grid — 1 column on mobile */
-      .tools-grid {
-        grid-template-columns: 1fr;
-      }
-      .tool-card { padding: 28px 24px; }
-      .tool-number { font-size: 36px; }
-      .tool-name { font-size: 22px; }
-
-      /* Modal */
-      .modal-overlay { padding: 0; align-items: flex-end; }
-      .modal {
-        max-width: 100%;
-        width: 100%;
-        padding: 28px 20px;
-        max-height: 92vh;
-        overflow-y: auto;
-        border-radius: 0;
-        border-left: none;
-        border-right: none;
-        border-bottom: none;
-      }
-      .modal-wide { max-width: 100% !important; }
-      .modal-title { font-size: 28px; }
-
-      /* Two column modal layout — stack on mobile */
-      .modal-columns {
-        grid-template-columns: 1fr;
-        gap: 20px;
-      }
-
-      /* Fields row — stack inputs */
-      .fields-row {
-        grid-template-columns: 1fr;
-        gap: 12px;
-      }
-
-      /* Verdict panel */
-      .verdict-waiting,
-      .verdict-result {
-        min-height: 120px;
-      }
-
-      /* Share panel — stack vertically */
-      .share-panel {
-        flex-direction: column;
-        padding: 20px;
-        gap: 20px;
-        max-height: 92vh;
-        overflow-y: auto;
-        border-radius: 0;
-        border-left: none;
-        border-right: none;
-        border-bottom: none;
-      }
-      .share-overlay { align-items: flex-end; padding: 0; }
-      .share-divider { width: 100%; height: 1px; }
-      .share-controls { min-width: unset; }
-      .share-ratio-switcher { justify-content: flex-start; }
-      .share-canvas-wrapper { min-height: 200px; }
-      canvas#shareCard { max-height: 280px; }
-
-      /* Resume split verdict */
-      .verdict-split {
-        flex-direction: column !important;
-      }
-
-      /* Level up + unlock banners */
-      .levelup-banner, .unlock-banner {
-        width: 90%;
-        padding: 24px 20px;
-      }
-    }
-
-    /* Extra small screens */
-    @media (max-width: 400px) {
-      .hero-title { font-size: 58px; }
-      .tool-card { padding: 24px 18px; }
-      .modal { padding: 24px 16px; }
-    }
   </style>
 </head>
 <body>
@@ -1419,7 +1285,7 @@
       <h1>ANVIL</h1>
       <span class="hero-tagline">Forged in Satire</span>
     </div>
-    <p class="hero-sub">AI-powered tools that are actually useful — wrapped in enough sass to make you question your life choices.</p>
+    <p class="hero-sub">Three AI-powered tools that are actually useful — wrapped in enough sass to make you question your life choices.</p>
     <div class="hero-stats">
       <div class="stat stat-uses">
         <span class="stat-num" id="statUses">0</span>
@@ -1712,7 +1578,10 @@
                 <div class="verdict-half-label fix-label">// fixed version</div>
                 <div class="verdict-half-text" id="resume-fixed-text"></div>
               </div>
-              <div class="xp-toast" id="resume-xp" style="padding: 12px 24px; border-top: 1px solid var(--border);"></div>
+              <div style="padding: 12px 24px; border-top: 1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
+                <div class="xp-toast" id="resume-xp"></div>
+                <button class="share-btn" id="resume-share-btn" onclick="openSharePanel('resume')" style="margin-top:0;">⬡ SHARE RESULT</button>
+              </div>
             </div>
           </div>
         </div>
@@ -2085,6 +1954,7 @@
       const earned = addXP(35);
       document.getElementById('resume-xp').innerText = `+${earned} XP earned!`;
       showXPFloat(earned, btn);
+      document.getElementById('resume-share-btn').classList.add('visible');
     }
 
     // ── Share Card ──
@@ -2106,12 +1976,22 @@
     };
 
     function openSharePanel(tool) {
-      const textEl = document.getElementById(tool === 'roaster' ? 'roaster-text' : tool + '-text');
-      const comic = tool === 'roaster' ? document.getElementById('roaster-comic')?.options[document.getElementById('roaster-comic')?.selectedIndex]?.text : '';
+      let resultText = '';
+      if (tool === 'resume') {
+        const roast = document.getElementById('resume-roast-text')?.innerText || '';
+        const fixed = document.getElementById('resume-fixed-text')?.innerText || '';
+        resultText = roast; // share the roast section
+      } else {
+        const textEl = document.getElementById(tool === 'roaster' ? 'roaster-text' : tool + '-text');
+        resultText = textEl ? textEl.innerText : '';
+      }
+      const comic = (tool === 'roaster' || tool === 'resume')
+        ? document.getElementById(tool + '-comic')?.options[document.getElementById(tool + '-comic')?.selectedIndex]?.text
+        : '';
       const lvl = getCurrentLevel();
       shareData = {
         tool,
-        text: textEl ? textEl.innerText : '',
+        text: resultText,
         comic: comic || '',
         color: TOOL_META[tool].color,
         toolName: TOOL_META[tool].name,
