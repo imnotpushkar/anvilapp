@@ -652,6 +652,212 @@
       color: var(--text-dim);
     }
 
+    /* NAV AUTHOR TAG */
+    .nav-author-tag {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.12em;
+      color: var(--text-dim);
+      border: 1px solid var(--border-bright);
+      padding: 3px 8px;
+      margin-left: 10px;
+      align-self: center;
+      white-space: nowrap;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .nav-author-tag:hover { color: var(--accent); border-color: var(--accent); }
+
+    /* HERO TAGLINE ROW */
+    .hero-tagline-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .hero-tagline { margin-bottom: 0; }
+    .hero-byline {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      color: var(--text-dim);
+      white-space: nowrap;
+    }
+
+    /* ABOUT — GLITCH */
+    .about-section {
+      padding: 0 48px 64px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .about-glitch-wrap {
+      border: 1px solid var(--border-bright);
+      background: var(--surface);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .about-glitch-wrap::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(255,77,0,0.015) 2px,
+        rgba(255,77,0,0.015) 4px
+      );
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .about-glitch-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,77,0,0.04);
+    }
+
+    .about-glitch-tag {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      color: var(--accent);
+    }
+
+    .about-glitch-status {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      color: #00e676;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .about-status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #00e676;
+      animation: statusPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes statusPulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 6px #00e676; }
+      50% { opacity: 0.4; box-shadow: none; }
+    }
+
+    .about-glitch-body {
+      display: flex;
+      position: relative;
+      z-index: 1;
+    }
+
+    .about-glitch-line-nums {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      padding: 28px 16px 28px 20px;
+      border-right: 1px solid var(--border);
+      background: rgba(0,0,0,0.2);
+      user-select: none;
+    }
+
+    .about-glitch-line-nums span {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      line-height: 2.05;
+      opacity: 0.4;
+    }
+
+    .about-glitch-content {
+      flex: 1;
+      padding: 28px 40px;
+      position: relative;
+    }
+
+    .about-glitch-text {
+      font-size: 15px;
+      color: var(--text);
+      line-height: 2.05;
+      font-weight: 300;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Glitch overlay — red/cyan offset clone */
+    .about-glitch-overlay {
+      position: absolute;
+      top: 28px; left: 40px; right: 40px;
+      font-size: 15px;
+      line-height: 2.05;
+      font-weight: 300;
+      font-family: var(--sans);
+      color: transparent;
+      pointer-events: none;
+      z-index: 1;
+      animation: glitchShift 6s infinite;
+    }
+
+    @keyframes glitchShift {
+      0%, 92%, 100% {
+        text-shadow: none;
+        clip-path: inset(0 0 100% 0);
+        transform: translate(0);
+      }
+      93% {
+        clip-path: inset(20% 0 60% 0);
+        transform: translate(-3px, 0);
+        text-shadow: 2px 0 #ff4d00, -2px 0 #00e5ff;
+      }
+      95% {
+        clip-path: inset(50% 0 20% 0);
+        transform: translate(3px, 0);
+        text-shadow: -2px 0 #ff4d00, 2px 0 #00e5ff;
+      }
+      97% {
+        clip-path: inset(10% 0 75% 0);
+        transform: translate(-2px, 0);
+        text-shadow: 2px 0 #ff4d00, -2px 0 #00e5ff;
+      }
+      99% {
+        clip-path: inset(0 0 100% 0);
+        transform: translate(0);
+        text-shadow: none;
+      }
+    }
+
+    .about-glitch-footer {
+      display: flex;
+      gap: 20px;
+      padding: 10px 20px;
+      border-top: 1px solid var(--border);
+      background: rgba(0,0,0,0.2);
+    }
+
+    .about-footer-tag {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.15em;
+      color: var(--text-dim);
+    }
+
+    .about-footer-tag.accent { color: var(--accent); }
+
+    @media (max-width: 768px) {
+      .about-section { padding: 0 20px 48px; }
+      .about-glitch-line-nums { display: none; }
+      .about-glitch-content { padding: 24px 20px; }
+      .about-glitch-overlay { left: 20px; right: 20px; }
+      .nav-author-tag { display: none; }
+      .hero-byline { display: none; }
+    }
+
     /* TOOLS SECTION */
     .tools-section {
       padding: 0 48px 100px;
@@ -1671,6 +1877,23 @@
       .tool-card { padding: 22px 16px; }
       .modal { padding: 20px 14px; }
     }
+    /* FOOTER */
+    .site-footer {
+      border-top: 1px solid var(--border);
+      padding: 20px 48px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+    }
+    .footer-dot { color: var(--border-bright); }
+    .footer-tagline { color: var(--accent); }
+    @media (max-width: 768px) {
+      .site-footer { padding: 16px 20px; flex-wrap: wrap; gap: 8px; }
+    }
   </style>
 </head>
 <body>
@@ -1687,6 +1910,7 @@
       <div class="nav-sparks"><span></span><span></span><span></span><span></span><span></span></div>
       <div class="nav-logo-name">ANVIL</div>
       <span class="nav-logo-tagline">Forged in Satire</span>
+      <span class="nav-author-tag">by Pushkar Gupta</span>
     </div>
     <ul class="nav-links">
       <li><a href="#">Tools</a></li>
@@ -1754,7 +1978,10 @@
         <div class="hero-heading-block">
           <div class="hero-sparks"><span></span><span></span><span></span><span></span><span></span></div>
           <h1>ANVIL</h1>
-          <span class="hero-tagline">Forged in Satire</span>
+          <div class="hero-tagline-row">
+            <span class="hero-tagline">Forged in Satire</span>
+            <span class="hero-byline">· by Pushkar Gupta</span>
+          </div>
         </div>
         <p class="hero-sub">AI-powered tools that are actually useful — wrapped in enough sass to make you question your life choices.</p>
         <div class="hero-stats">
@@ -1808,6 +2035,31 @@
             </ul>
           </div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section class="about-section">
+    <div class="about-glitch-wrap">
+      <div class="about-glitch-header">
+        <span class="about-glitch-tag">// WHO_BUILT_THIS.exe</span>
+        <span class="about-glitch-status"><span class="about-status-dot"></span>RUNNING</span>
+      </div>
+      <div class="about-glitch-body">
+        <div class="about-glitch-line-nums">
+          <span>01</span><span>02</span><span>03</span><span>04</span><span>05</span>
+          <span>06</span><span>07</span><span>08</span><span>09</span><span>10</span>
+        </div>
+        <div class="about-glitch-content">
+          <p class="about-glitch-text" id="aboutGlitchText">I'm Pushkar Gupta. ANVIL wasn't supposed to be this. It started as a fun side project — something to mess around with after a previous one that, honestly, flopped. I've always been the kind of person who makes people laugh, and I've loved comedy and comics for as long as I can remember. So somewhere between the disappointment of that last build and a bunch of random inspiration hitting at once, ANVIL happened. No grand vision, no master plan — just one thing leading to another. The idea was probably sitting in my head all along, waiting. What came out is this: a little pocket of unseriousness in a world that takes itself way too seriously. Here's to making it better. Cheers.</p>
+          <div class="about-glitch-overlay" aria-hidden="true">I'm Pushkar Gupta. ANVIL wasn't supposed to be this. It started as a fun side project — something to mess around with after a previous one that, honestly, flopped. I've always been the kind of person who makes people laugh, and I've loved comedy and comics for as long as I can remember. So somewhere between the disappointment of that last build and a bunch of random inspiration hitting at once, ANVIL happened. No grand vision, no master plan — just one thing leading to another. The idea was probably sitting in my head all along, waiting. What came out is this: a little pocket of unseriousness in a world that takes itself way too seriously. Here's to making it better. Cheers.</div>
+        </div>
+      </div>
+      <div class="about-glitch-footer">
+        <span class="about-footer-tag">EXIT_CODE: 0</span>
+        <span class="about-footer-tag">LINES: 10</span>
+        <span class="about-footer-tag accent">STATUS: UNSERIOUS</span>
       </div>
     </div>
   </section>
@@ -3002,5 +3254,14 @@
       </div>
     </div>
   </div>
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <span class="footer-credit">ANVIL</span>
+    <span class="footer-dot">·</span>
+    <span class="footer-tagline">Forged in Satire</span>
+    <span class="footer-dot">·</span>
+    <span class="footer-credit">© 2025 Pushkar Gupta</span>
+  </footer>
+
 </body>
 </html>
