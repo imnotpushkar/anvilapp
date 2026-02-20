@@ -40,8 +40,7 @@ def index():
 
 @app.route("/auth/login")
 def login():
-    base_url = os.environ.get("APP_URL", request.url_root.rstrip("/"))
-    redirect_url = base_url + "/auth/callback"
+    redirect_url = request.url_root.rstrip("/") + "/auth/callback"
     result = supabase.auth.sign_in_with_oauth({
         "provider": "google",
         "options": {"redirect_to": redirect_url}
@@ -52,12 +51,19 @@ def login():
 @app.route("/auth/callback")
 def auth_callback():
     code = request.args.get("code")
+    print(f"[AUTH] Callback hit. Code present: {bool(code)}")
+    print(f"[AUTH] Full URL: {request.url}")
+    
     if not code:
+        print("[AUTH] No code in callback — redirecting home")
         return redirect("/")
+    
     try:
         result = supabase.auth.exchange_code_for_session({"auth_code": code})
+        print(f"[AUTH] Session exchange result: {result}")
         user = result.user
         access_token = result.session.access_token
+        print(f"[AUTH] User: {user.email}")
         session["user"] = {
             "id": user.id,
             "email": user.email,
@@ -73,8 +79,10 @@ def auth_callback():
                 "streak": 0,
                 "tools_used": 0
             }).execute()
+        print("[AUTH] Login successful")
     except Exception as e:
-        print(f"Auth error: {e}")
+        print(f"[AUTH] Error: {type(e).__name__}: {e}")
+    
     return redirect("/")
 
 
