@@ -37,19 +37,22 @@ def ask_groq(prompt):
 
 
 def log_tool_use(tool_name):
-    """Insert a row into tool_uses if user is logged in. Silent fail so it never breaks a tool."""
+    """Insert a row into tool_uses if user is logged in."""
     try:
         user = session.get("user")
         if not user:
+            print(f"[TOOL_USES] Skipping — no user in session")
             return
-        supabase.table("tool_uses").insert({
+        print(f"[TOOL_USES] Attempting insert for user {user['id']} tool {tool_name}")
+        result = supabase.table("tool_uses").insert({
             "user_id": user["id"],
             "tool_name": tool_name,
             "xp_earned": TOOL_XP.get(tool_name, 0),
             "used_at": datetime.now(timezone.utc).isoformat()
         }).execute()
+        print(f"[TOOL_USES] Insert result: {result}")
     except Exception as e:
-        print(f"[TOOL_USES] Failed to log {tool_name}: {e}")
+        print(f"[TOOL_USES] Failed to log {tool_name}: {type(e).__name__}: {e}")
 
 
 @app.route("/ping")
