@@ -3741,6 +3741,8 @@
         btn.dataset.label = 'PICK MY STACK ⚙️';
       }
     }
+      }
+    }
 
     async function submitStack() {
       const btn = document.getElementById('stack-submit-btn');
@@ -3998,14 +4000,15 @@
       ctx.fillStyle = 'rgba(255,255,255,0.35)';
       ctx.fillText('// ' + shareData.toolName, pad, topY);
 
-      // XP + Level badge (right side of header)
+      // XP + Level badge — pushed below tool name to avoid overlap
+      const levelY = topY + w * 0.052;
       ctx.textAlign = 'right';
       ctx.font = `bold ${w * 0.036}px 'Bebas Neue', sans-serif`;
       ctx.fillStyle = '#ffcc00';
-      ctx.fillText('⚡ ' + shareData.level, w - pad, topY);
+      ctx.fillText('⚡ ' + shareData.level, w - pad, levelY);
       ctx.font = `${w * 0.024}px 'DM Mono', monospace`;
       ctx.fillStyle = 'rgba(255,204,0,0.55)';
-      ctx.fillText(shareData.xp, w - pad, topY + w * 0.038);
+      ctx.fillText(shareData.xp, w - pad, levelY + w * 0.038);
       ctx.textAlign = 'left';
 
       // Icon
@@ -4088,15 +4091,16 @@
       ctx.fillStyle = 'rgba(255,255,255,0.3)';
       ctx.fillText('// ' + shareData.toolName, pad, topY);
 
-      // XP + Level badge (right side of header)
+      // XP + Level badge — pushed below tool name to avoid overlap
       const badgeX = cx + cw - cw*0.1;
+      const meshLevelY = topY + w * 0.052;
       ctx.textAlign = 'right';
       ctx.font = `bold ${w*0.036}px 'Bebas Neue', sans-serif`;
       ctx.fillStyle = '#ffcc00';
-      ctx.fillText('⚡ ' + shareData.level, badgeX, topY);
+      ctx.fillText('⚡ ' + shareData.level, badgeX, meshLevelY);
       ctx.font = `${w*0.024}px 'DM Mono', monospace`;
       ctx.fillStyle = 'rgba(255,204,0,0.55)';
-      ctx.fillText(shareData.xp, badgeX, topY + w*0.038);
+      ctx.fillText(shareData.xp, badgeX, meshLevelY + w*0.038);
       ctx.textAlign = 'left';
 
       // Icon + comic
