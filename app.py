@@ -60,10 +60,10 @@ def auth_callback():
 
     try:
         result = supabase.auth.exchange_code_for_session({"auth_code": code})
-        print(f"[AUTH] Session exchange result: {result}")
         user = result.user
         access_token = result.session.access_token
         print(f"[AUTH] User: {user.email}")
+
         session["user"] = {
             "id": user.id,
             "email": user.email,
@@ -72,7 +72,7 @@ def auth_callback():
             "access_token": access_token
         }
 
-        # Upsert into public.users table
+        # Save display name + avatar to users table
         supabase.table("users").upsert({
             "id": user.id,
             "email": user.email,
@@ -80,7 +80,7 @@ def auth_callback():
             "avatar_url": user.user_metadata.get("avatar_url", "")
         }).execute()
 
-        # Insert into user_stats if not exists
+        # Create user_stats row if first login
         existing = supabase.table("user_stats").select("*").eq("user_id", user.id).execute()
         if not existing.data:
             supabase.table("user_stats").insert({
@@ -89,6 +89,7 @@ def auth_callback():
                 "streak": 0,
                 "tools_used": 0
             }).execute()
+
         print("[AUTH] Login successful")
     except Exception as e:
         print(f"[AUTH] Error: {type(e).__name__}: {e}")
@@ -132,7 +133,17 @@ def save_xp():
 def leaderboard():
     try:
         result = supabase.table("user_stats").select("xp, user_id, users(display_name, avatar_url)").order("xp", desc=True).limit(50).execute()
-        return jsonify(result.data)
+        # Normalise rows — fill in Anonymous for users not in the users table
+        rows = []
+        for row in result.data:
+            user_info = row.get("users") or {}
+            rows.append({
+                "xp": row.get("xp", 0),
+                "user_id": row.get("user_id"),
+                "display_name": user_info.get("display_name") or "Anonymous",
+                "avatar_url": user_info.get("avatar_url") or ""
+            })
+        return jsonify(rows)
     except Exception as e:
         print(f"[LEADERBOARD] Error: {e}")
         return jsonify([]), 200
