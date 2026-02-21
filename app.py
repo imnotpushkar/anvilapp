@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, jsonify, redirect, session
 from groq import Groq
-from comics import get_comic_prompt, get_resume_prompt, get_garbage_prompt, is_garbage_input, COMIC_OPTIONS
+from comics import get_resume_prompt, get_linkedin_prompt, get_garbage_prompt, is_garbage_input, COMIC_OPTIONS
 from dotenv import load_dotenv
 from supabase import create_client, Client
 from datetime import datetime, timezone, timedelta
@@ -25,7 +25,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 # XP values per tool
 TOOL_XP = {
-    "roast": 25,
+    "linkedin": 25,
     "idea": 30,
     "stack": 20,
     "resume": 35
@@ -102,7 +102,6 @@ def auth_callback():
             "access_token": access_token
         }
 
-        # Save display name + avatar to users table
         supabase.table("users").upsert({
             "id": user.id,
             "email": user.email,
@@ -110,7 +109,6 @@ def auth_callback():
             "avatar_url": user.user_metadata.get("avatar_url", "")
         }).execute()
 
-        # Create user_stats row if first login
         existing = supabase.table("user_stats").select("*").eq("user_id", user.id).execute()
         if not existing.data:
             supabase.table("user_stats").insert({
@@ -181,17 +179,14 @@ def leaderboard():
 @app.route("/api/leaderboard/weekly", methods=["GET"])
 def leaderboard_weekly():
     try:
-        # Get start of current week (Monday) — safe for all days/months
         now = datetime.now(timezone.utc)
         week_start = (now - timedelta(days=now.weekday())).replace(
             hour=0, minute=0, second=0, microsecond=0
         )
         week_start_iso = week_start.isoformat()
 
-        # Sum XP earned per user this week from tool_uses
         result = supabase.table("tool_uses").select("user_id, xp_earned").gte("used_at", week_start_iso).execute()
 
-        # Aggregate XP per user
         totals = {}
         for row in result.data:
             uid = row["user_id"]
@@ -200,12 +195,10 @@ def leaderboard_weekly():
         if not totals:
             return jsonify([]), 200
 
-        # Get display names for all user_ids in the result
         user_ids = list(totals.keys())
         users_result = supabase.table("users").select("id, display_name, avatar_url").in_("id", user_ids).execute()
         user_map = {u["id"]: u for u in (users_result.data or [])}
 
-        # Build sorted leaderboard
         rows = []
         for uid, xp in sorted(totals.items(), key=lambda x: x[1], reverse=True)[:50]:
             u = user_map.get(uid, {})
@@ -228,11 +221,9 @@ def leaderboard_personal():
     if not user:
         return jsonify({"error": "not logged in"}), 401
     try:
-        # Get user stats
         result = supabase.table("user_stats").select("*").eq("user_id", user["id"]).execute()
         stats = result.data[0] if result.data else {"xp": 0, "streak": 0, "tools_used": 0}
 
-        # Calculate rank — count how many users have strictly more XP
         rank_result = supabase.table("user_stats").select("user_id", count="exact").gt("xp", stats.get("xp", 0)).execute()
         rank = (rank_result.count or 0) + 1
 
@@ -243,20 +234,20 @@ def leaderboard_personal():
         return jsonify({"xp": 0, "streak": 0, "tools_used": 0, "rank": "—"}), 200
 
 
-@app.route("/api/roast", methods=["POST"])
-def roast():
+@app.route("/api/linkedin", methods=["POST"])
+def linkedin():
     data = request.json
+    content = data.get("content", "").strip()
+    content_type = data.get("content_type", "post")  # post, bio, connection_request, headline
     comic = data.get("comic", "abhishek_upmanyu")
 
-    # Validate text fields before passing to Groq
-    for val, label in [(data.get("city", ""), "city"), (data.get("field", ""), "field")]:
-        garbage, g_reason = is_garbage_input(str(val))
-        if garbage:
-            return jsonify({"message": ask_groq(get_garbage_prompt(comic, "salary", val, g_reason))})
+    garbage, g_reason = is_garbage_input(content)
+    if garbage:
+        return jsonify({"message": ask_groq(get_garbage_prompt(comic, "linkedin", content, g_reason))})
 
-    prompt = get_comic_prompt(comic, data.get("salary"), data.get("city"), data.get("age"), data.get("field"))
+    prompt = get_linkedin_prompt(comic, content_type, content)
     result = ask_groq(prompt)
-    log_tool_use("roast")
+    log_tool_use("linkedin")
     return jsonify({"message": result})
 
 
@@ -315,23 +306,35 @@ def stack():
 @app.route("/api/resume", methods=["POST"])
 def resume():
     data = request.json
-    mode = data.get("mode")
+    mode = data.get("mode", "paste")
     comic = data.get("comic", "abhishek_upmanyu")
 
     if mode == "paste":
         resume_content = data.get("resume_text", "").strip()
     else:
-        resume_content = f"Name/Title: {data.get('name','')}\nExperience: {data.get('experience','')}\nSkills: {data.get('skills','')}\nEducation: {data.get('education','')}"
+        # Build mode — construct resume from form fields
+        name = data.get("name", "")
+        role = data.get("role", "")
+        experience = data.get("experience", "")
+        projects = data.get("projects", "")
+        skills = data.get("skills", "")
+        education = data.get("education", "")
+        resume_content = (
+            f"Name/Role: {name} — {role}\n"
+            f"Experience: {experience}\n"
+            f"Projects: {projects}\n"
+            f"Skills: {skills}\n"
+            f"Education: {education}"
+        ).strip()
 
     if not resume_content:
         return jsonify({"error": "No resume content provided"}), 400
 
-    # Garbage check at route level (consistent with other tools)
     garbage, g_reason = is_garbage_input(resume_content)
     if garbage:
         return jsonify({"message": ask_groq(get_garbage_prompt(comic, "resume", resume_content, g_reason))})
 
-    result = ask_groq(get_resume_prompt(comic, resume_content))
+    result = ask_groq(get_resume_prompt(comic, resume_content, mode=mode))
     log_tool_use("resume")
     return jsonify({"message": result})
 
