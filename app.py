@@ -53,11 +53,11 @@ def auth_callback():
     code = request.args.get("code")
     print(f"[AUTH] Callback hit. Code present: {bool(code)}")
     print(f"[AUTH] Full URL: {request.url}")
-    
+
     if not code:
         print("[AUTH] No code in callback — redirecting home")
         return redirect("/")
-    
+
     try:
         result = supabase.auth.exchange_code_for_session({"auth_code": code})
         print(f"[AUTH] Session exchange result: {result}")
@@ -71,6 +71,16 @@ def auth_callback():
             "avatar": user.user_metadata.get("avatar_url", ""),
             "access_token": access_token
         }
+
+        # Upsert into public.users table
+        supabase.table("users").upsert({
+            "id": user.id,
+            "email": user.email,
+            "display_name": user.user_metadata.get("full_name", user.email),
+            "avatar_url": user.user_metadata.get("avatar_url", "")
+        }).execute()
+
+        # Insert into user_stats if not exists
         existing = supabase.table("user_stats").select("*").eq("user_id", user.id).execute()
         if not existing.data:
             supabase.table("user_stats").insert({
@@ -82,7 +92,7 @@ def auth_callback():
         print("[AUTH] Login successful")
     except Exception as e:
         print(f"[AUTH] Error: {type(e).__name__}: {e}")
-    
+
     return redirect("/")
 
 
@@ -120,8 +130,33 @@ def save_xp():
 
 @app.route("/api/leaderboard", methods=["GET"])
 def leaderboard():
-    result = supabase.table("user_stats").select("xp, users(display_name, avatar_url)").order("xp", desc=True).limit(50).execute()
-    return jsonify(result.data)
+    try:
+        result = supabase.table("user_stats").select("xp, user_id, users(display_name, avatar_url)").order("xp", desc=True).limit(50).execute()
+        return jsonify(result.data)
+    except Exception as e:
+        print(f"[LEADERBOARD] Error: {e}")
+        return jsonify([]), 200
+
+
+@app.route("/api/leaderboard/weekly", methods=["GET"])
+def leaderboard_weekly():
+    # Will be populated once tool_uses inserts are wired up
+    return jsonify([]), 200
+
+
+@app.route("/api/leaderboard/personal", methods=["GET"])
+def leaderboard_personal():
+    user = session.get("user")
+    if not user:
+        return jsonify({"error": "not logged in"}), 401
+    try:
+        result = supabase.table("user_stats").select("*").eq("user_id", user["id"]).execute()
+        if result.data:
+            return jsonify(result.data[0])
+        return jsonify({"xp": 0, "streak": 0, "tools_used": 0})
+    except Exception as e:
+        print(f"[PERSONAL] Error: {e}")
+        return jsonify({"xp": 0, "streak": 0, "tools_used": 0}), 200
 
 
 @app.route("/api/roast", methods=["POST"])
@@ -138,7 +173,6 @@ def idea():
     market_text = data.get("market", "")
     comic = data.get("comic", "abhishek_upmanyu")
 
-    # Check for garbage input
     for val, label in [(idea_text, "idea"), (market_text, "market")]:
         garbage, g_reason = is_garbage_input(str(val))
         if garbage:
@@ -162,7 +196,6 @@ def stack():
     project_text = data.get("project", "")
     comic = data.get("comic", "abhishek_upmanyu")
 
-    # Check for garbage input
     garbage, g_reason = is_garbage_input(str(project_text))
     if garbage:
         return jsonify({"message": ask_groq(get_garbage_prompt(comic, "stack", project_text, g_reason))})
