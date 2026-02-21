@@ -3,12 +3,114 @@ Comic style prompt library for Forged in Satire.
 Each function returns a system prompt that shapes how Groq roasts the user.
 """
 
+import re
+
 ABSURD_NUMBERS = {1, 69, 420, 1337, 999, 9999, 99999, 999999, 9999999}
 
 PEER_TONE_NOTE = """
 IMPORTANT TONE RULE: Always speak to the person as a peer — same age, same level. 
 Never call them "beta", "baccha", "kiddo", or anything that implies you are older or superior. 
 Words like bhai, yaar, bro are totally fine. Keep it equal energy throughout."""
+
+
+# ── UNIVERSAL GARBAGE DETECTION ──
+
+def is_garbage_input(text):
+    """
+    Returns (True, reason) if the input is garbage, (False, None) otherwise.
+    Detects: empty, too short, keyboard mashing, random symbols, gibberish strings,
+    repeated characters, all numbers where text is expected.
+    """
+    if not text or not text.strip():
+        return True, "empty"
+
+    t = text.strip()
+
+    # Too short to mean anything
+    if len(t) < 3:
+        return True, "too_short"
+
+    # Only special characters / symbols / slashes
+    if re.match(r'^[^a-zA-Z0-9\s]{3,}$', t):
+        return True, "symbols_only"
+
+    # Keyboard mash — high ratio of uncommon character transitions
+    # Check if it's mostly consonant clusters with no vowels (gibberish)
+    letters_only = re.sub(r'[^a-zA-Z]', '', t.lower())
+    if len(letters_only) > 4:
+        vowels = sum(1 for c in letters_only if c in 'aeiou')
+        vowel_ratio = vowels / len(letters_only)
+        if vowel_ratio < 0.08:  # almost no vowels = keyboard mash
+            return True, "keyboard_mash"
+
+    # Repeated single character (aaaaaaa, zzzzzzz, -------)
+    if re.match(r'^(.)\1{4,}$', t):
+        return True, "repeated_char"
+
+    # Random slash/backslash combos (like //bwefewibfwo)
+    if re.match(r'^[/\\]{1,3}[a-z]{3,}$', t.lower()):
+        return True, "slash_gibberish"
+
+    # Way too many consecutive consonants without spaces (mashing)
+    words = t.split()
+    for word in words:
+        letters = re.sub(r'[^a-zA-Z]', '', word)
+        if len(letters) > 10:
+            vowels = sum(1 for c in letters.lower() if c in 'aeiou')
+            if vowels == 0:
+                return True, "keyboard_mash"
+
+    return False, None
+
+
+def get_garbage_prompt(comic, tool_name, garbage_input, reason):
+    """
+    Returns a prompt that roasts the user for submitting garbage input.
+    tool_name: 'idea', 'stack', 'resume', 'salary'
+    """
+    reason_context = {
+        "empty":          f"They submitted absolutely nothing. A blank. The void. They hit submit on an empty field.",
+        "too_short":      f"They typed '{garbage_input}' — that's it. {len(garbage_input.strip())} character(s). That's not an input, that's a typo.",
+        "symbols_only":   f"They typed '{garbage_input}' — pure symbols. No letters, no words, no meaning. Just vibes and punctuation.",
+        "keyboard_mash":  f"They typed '{garbage_input}' — classic keyboard mash. Face on keyboard detected.",
+        "repeated_char":  f"They typed '{garbage_input}' — the same character, over and over. Infinite monkeys, zero Shakespeare.",
+        "slash_gibberish":f"They typed '{garbage_input}' — looks like they accidentally submitted their file path or just started typing with their elbow.",
+    }
+
+    tool_context = {
+        "idea":   "into an AI startup idea checker",
+        "stack":  "into an AI tech stack recommender",
+        "resume": "into an AI resume roaster",
+        "salary": "into an AI salary roaster",
+    }
+
+    context = reason_context.get(reason, f"They typed '{garbage_input}' which makes absolutely no sense.")
+    where = tool_context.get(tool_name, "into an AI tool")
+
+    style_notes = {
+        "ravi_gupta":         "Ravi Gupta style — start like you're about to take it seriously, nod along warmly, then pivot to complete deadpan devastation about the garbage they submitted.",
+        "abhishek_upmanyu":   "Abhishek Upmanyu style — rapid fire, exhausted, layered. React like an overworked developer who has seen one too many bad inputs today.",
+        "anubhav_bassi":      "Anubhav Singh Bassi style — build a short story about how you also once submitted something embarrassing, bring it back to them with full resignation.",
+        "madhur_virli":       "Madhur Virli style — dark, blunt, IIT-placement-cell energy. Call out the garbage input like it's a failed aptitude test.",
+        "kaustubh_aggarwal":  "Kaustubh Aggarwal style — Delhi friend energy. Casual on the surface, absolutely devastating underneath. Sound like someone who just saw this over your shoulder.",
+        "ashish_solanki":     "Ashish Solanki style — compare this to something a family member would do at a shaadi. Warm but cutting.",
+        "samay_raina":        "Samay Raina style — treat this like a chess blunder. Post-mortem the move with gen-z internet energy and mild disappointment.",
+    }
+
+    style = style_notes.get(comic, style_notes["abhishek_upmanyu"])
+
+    return f"""You are roasting someone who submitted complete garbage {where}.
+
+What they submitted: "{garbage_input}"
+What went wrong: {context}
+
+Comic style: {style}
+
+Roast them specifically for submitting this garbage — call out what they did wrong with humor. 
+Do NOT try to answer their garbage input as if it were real.
+Stay fully in the comedian's voice and style.
+Keep it to 2-3 punchy sentences. No disclaimers, no explanations — just the roast.
+{PEER_TONE_NOTE}"""
 
 def is_absurd_salary(salary):
     try:
@@ -67,6 +169,12 @@ def get_comic_prompt(comic, salary, city, age, field):
     absurd, reason = is_absurd_salary(salary)
     if absurd:
         return get_absurd_salary_prompt(comic, salary, city, age, field, reason)
+
+    # Check for garbage in text fields
+    for val, label in [(city, "city"), (field, "field")]:
+        garbage, g_reason = is_garbage_input(str(val or ""))
+        if garbage:
+            return get_garbage_prompt(comic, "salary", f"{label}: {val}", g_reason)
 
     base_details = f"Age: {age}, City: {city}, Field: {field}, Monthly Salary: Rs.{salary}"
 
@@ -197,6 +305,11 @@ def get_resume_prompt(comic, resume_content):
     [ROAST] and [FIXED]
     """
 
+    # Check for garbage input
+    garbage, g_reason = is_garbage_input(resume_content)
+    if garbage:
+        return get_garbage_prompt(comic, "resume", resume_content, g_reason)
+
     style_notes = {
         "ravi_gupta": "Ravi Gupta style — start warm and agreeable, seem like you're about to give genuine feedback, then flip it with a deadpan brutal observation. Straight-faced, no drama.",
         "abhishek_upmanyu": "Abhishek Upmanyu style — rapid-fire, exhausted corporate realism. Layer the punches fast. Talk like a stressed overworked HR person who has seen too many bad CVs.",
@@ -209,7 +322,7 @@ def get_resume_prompt(comic, resume_content):
 
     style = style_notes.get(comic, style_notes["abhishek_upmanyu"])
 
-    prompt = f"""You are a brutally honest career coach who also happens to be a standup comedian.
+    prompt = f"""You are a brutally honest career coach who also happens to be a standup comedian. 
 Your job is to do TWO things simultaneously:
 1. Give REAL, specific, actionable resume feedback (grammar fixes, weak phrasing, missing info, better bullet points)
 2. Deliver that feedback in the style of a specific Indian comedian — savage but not mean, roasting but genuinely helpful
@@ -219,7 +332,7 @@ Comic style to use: {style}
 Resume content:
 {resume_content}
 
-YOU MUST RESPOND IN EXACTLY THIS FORMAT. NO EXCEPTIONS. DO NOT USE ## Step 1 or ## Step 2 or any other format:
+You MUST respond in exactly this format — two sections, nothing else:
 
 [ROAST]
 Write 3-4 sentences of roast-style feedback in the comedian's voice. Point out real weaknesses (vague language, bad grammar, missing metrics, generic skills) but make it funny. Sound like the comedian, not a generic AI.
@@ -227,10 +340,7 @@ Write 3-4 sentences of roast-style feedback in the comedian's voice. Point out r
 [FIXED]
 Rewrite the weakest parts of their resume — improve bullet points, fix grammar, make achievements quantifiable, sharpen the language. Show the actual corrected text. Be specific, not generic.
 
-CRITICAL RULES:
-- Start your response with [ROAST] — nothing before it
-- Use exactly [ROAST] and [FIXED] as section headers — not ## Step 1, not # ROAST, not anything else
-- Keep the roast punchy. Keep the fix genuinely useful."""
+Keep the roast punchy. Keep the fix genuinely useful. The person should laugh AND improve their resume."""
 
     return prompt
 
