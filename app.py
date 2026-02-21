@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, jsonify, redirect, session
 from groq import Groq
-from comics import get_resume_prompt, get_linkedin_prompt, get_linkedin_create_prompt, get_idea_check_prompt, get_idea_create_prompt, get_stack_check_prompt, get_stack_create_prompt, get_resume_create_prompt, get_garbage_prompt, is_garbage_input, COMIC_OPTIONS
+from comics import get_resume_prompt, get_linkedin_prompt, get_linkedin_create_prompt, get_idea_create_prompt, get_stack_create_prompt, get_resume_create_prompt, get_garbage_prompt, is_garbage_input, COMIC_OPTIONS
 from dotenv import load_dotenv
 from supabase import create_client, Client
 from datetime import datetime, timezone, timedelta
@@ -272,7 +272,14 @@ def idea():
             garbage, g_reason = is_garbage_input(str(val))
             if garbage:
                 return jsonify({"message": ask_groq(get_garbage_prompt(comic, "idea", val, g_reason))})
-        prompt = get_idea_create_prompt(comic, skills, interests)
+        edge = data.get("edge", "")
+        role = data.get("role", "")
+        market = data.get("market", "")
+        idea_type = data.get("idea_type", "")
+        time_commit = data.get("time", "")
+        budget = data.get("budget", "")
+        team = data.get("team", "")
+        prompt = get_idea_create_prompt(comic, skills, interests, edge=edge, role=role, market=market, idea_type=idea_type, time_commit=time_commit, budget=budget, team=team)
     else:
         idea_text = data.get("idea", "")
         market_text = data.get("market", "")
@@ -280,7 +287,15 @@ def idea():
             garbage, g_reason = is_garbage_input(str(val))
             if garbage:
                 return jsonify({"message": ask_groq(get_garbage_prompt(comic, "idea", val, g_reason))})
-        prompt = get_idea_check_prompt(comic, idea_text, market_text)
+        prompt = f"""You are a sharp startup analyst with a dark sense of humor.
+    Analyze this startup idea and tell the person:
+    1. If it already exists (and name competitors)
+    2. How original it actually is (score out of 10)
+    3. Whether it has potential or is dead on arrival
+    4. One savage but constructive piece of advice
+    Idea: {idea_text}
+    Target Market: {market_text}
+    Keep it punchy, honest, and slightly brutal. 4-5 sentences max."""
 
     result = ask_groq(prompt)
     log_tool_use("idea")
@@ -294,18 +309,35 @@ def stack():
     comic = data.get("comic", "abhishek_upmanyu")
 
     if mode == "create":
-        level = data.get("level", "beginner")
         interests = data.get("interests", "").strip()
         garbage, g_reason = is_garbage_input(str(interests))
         if garbage:
             return jsonify({"message": ask_groq(get_garbage_prompt(comic, "stack", interests, g_reason))})
-        prompt = get_stack_create_prompt(comic, level, interests)
+        shipped = data.get("shipped", "")
+        known = data.get("known", "")
+        learn = data.get("learn", "")
+        exp = data.get("exp", "")
+        pref = data.get("pref", "")
+        goal = data.get("goal", "")
+        time_commit = data.get("time", "")
+        deadline = data.get("deadline", "")
+        prompt = get_stack_create_prompt(comic, interests, shipped=shipped, known=known, learn=learn, exp=exp, pref=pref, goal=goal, time_commit=time_commit, deadline=deadline)
     else:
         project_text = data.get("project", "")
         garbage, g_reason = is_garbage_input(str(project_text))
         if garbage:
             return jsonify({"message": ask_groq(get_garbage_prompt(comic, "stack", project_text, g_reason))})
-        prompt = get_stack_check_prompt(comic, project_text, data.get('level', 'beginner'), data.get('priority', 'balanced'))
+        prompt = f"""You are an opinionated senior developer who gives direct tech stack recommendations.
+    Recommend a tech stack for this project. Be specific and decisive - no wishy-washy answers.
+    Project: {project_text}
+    Developer Experience Level: {data.get("level")}
+    Priority: {data.get("priority")}
+    Format your answer as:
+    FRONTEND: ...
+    BACKEND: ...
+    DATABASE: ...
+    HOSTING: ...
+    WHY: one punchy sentence explaining the choice."""
 
     result = ask_groq(prompt)
     log_tool_use("stack")

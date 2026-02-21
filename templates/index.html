@@ -2268,7 +2268,24 @@
     @media (max-width: 768px) {
       .site-footer { padding: 16px 20px; flex-wrap: wrap; gap: 8px; }
     }
-  </style>
+  
+    /* ── QUESTIONNAIRE STEPS ── */
+    .q-steps { display: flex; gap: 6px; margin-bottom: 18px; }
+    .q-step-dot { flex: 1; height: 3px; background: var(--border); border-radius: 2px; transition: background 0.3s; }
+    .q-step-dot.active { background: var(--accent2); }
+    .q-step-dot.done { background: var(--accent); }
+    .q-step-label { font-family: var(--mono); font-size: 10px; color: var(--text-dim); letter-spacing: 0.1em; margin-bottom: 14px; }
+    .q-panel { display: none; flex-direction: column; gap: 14px; }
+    .q-panel.active { display: flex; }
+    .q-nav { display: flex; gap: 10px; margin-top: 6px; }
+    .q-btn-next { flex: 1; padding: 10px 0; background: var(--accent2); color: #000; font-family: var(--display); font-size: 14px; letter-spacing: 0.1em; border: none; cursor: pointer; border-radius: 2px; transition: opacity 0.2s; }
+    .q-btn-next:hover { opacity: 0.85; }
+    .q-btn-back { padding: 10px 18px; background: transparent; color: var(--text-dim); font-family: var(--display); font-size: 14px; letter-spacing: 0.1em; border: 1px solid var(--border); cursor: pointer; border-radius: 2px; transition: all 0.2s; }
+    .q-btn-back:hover { border-color: var(--text-dim); color: var(--text); }
+    .q-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .q-chip { padding: 6px 14px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); font-family: var(--mono); font-size: 11px; cursor: pointer; border-radius: 2px; transition: all 0.15s; user-select: none; }
+    .q-chip.selected { border-color: var(--accent2); color: var(--accent2); background: rgba(0,230,118,0.06); }
+</style>
 </head>
 <body>
 
@@ -2607,17 +2624,97 @@
 
           <!-- CREATE mode -->
           <div class="input-mode" id="idea-mode-create">
-            <div class="field">
-              <label>Your Skills</label>
-              <input type="text" id="idea-skills" placeholder="e.g. Python, ML, frontend dev, content writing"/>
+            <!-- Step indicator -->
+            <div class="q-steps" id="idea-q-steps">
+              <div class="q-step-dot active" id="idea-dot-0"></div>
+              <div class="q-step-dot" id="idea-dot-1"></div>
+              <div class="q-step-dot" id="idea-dot-2"></div>
             </div>
-            <div class="field">
-              <label>Your Interests</label>
-              <input type="text" id="idea-interests" placeholder="e.g. fintech, gaming, sustainability, education"/>
+            <div class="q-step-label" id="idea-q-label">Step 1 of 3 — Who are you?</div>
+
+            <!-- Step 1: Who are you -->
+            <div class="q-panel active" id="idea-qp-0">
+              <div class="field">
+                <label>What do you do right now?</label>
+                <div class="q-chips" id="idea-chips-role">
+                  <div class="q-chip" onclick="selectChip(this,'idea-chips-role')">Student</div>
+                  <div class="q-chip" onclick="selectChip(this,'idea-chips-role')">Working professional</div>
+                  <div class="q-chip" onclick="selectChip(this,'idea-chips-role')">Freelancer</div>
+                  <div class="q-chip" onclick="selectChip(this,'idea-chips-role')">Between things</div>
+                </div>
+              </div>
+              <div class="field">
+                <label>Your strongest skills</label>
+                <input type="text" id="idea-skills" placeholder="e.g. Python, design, marketing, writing"/>
+              </div>
+              <div class="field">
+                <label>Something you're good at that most people aren't</label>
+                <input type="text" id="idea-edge" placeholder="e.g. I explain complex things simply, I know Tier-2 markets"/>
+              </div>
+              <div class="q-nav">
+                <button class="q-btn-next" onclick="ideaNextStep(1)">NEXT →</button>
+              </div>
             </div>
-            <div class="field">
-              <label>Background <span style="opacity:0.5;font-size:10px;">(optional)</span></label>
-              <input type="text" id="idea-background" placeholder="e.g. CS student, ex-banker, 2 years at startup"/>
+
+            <!-- Step 2: What drives you -->
+            <div class="q-panel" id="idea-qp-1">
+              <div class="field">
+                <label>Domains or problems that excite you</label>
+                <input type="text" id="idea-interests" placeholder="e.g. education, logistics, content creators, health"/>
+              </div>
+              <div class="field">
+                <label>Building for?</label>
+                <div class="q-chips" id="idea-chips-market">
+                  <div class="q-chip" onclick="selectChip(this,'idea-chips-market')">India</div>
+                  <div class="q-chip" onclick="selectChip(this,'idea-chips-market')">Global</div>
+                  <div class="q-chip" onclick="selectChip(this,'idea-chips-market')">Both</div>
+                </div>
+              </div>
+              <div class="field">
+                <label>Type of idea you're open to</label>
+                <div class="q-chips" id="idea-chips-type">
+                  <div class="q-chip" onclick="selectChip(this,'idea-chips-type')">SaaS</div>
+                  <div class="q-chip" onclick="selectChip(this,'idea-chips-type')">App</div>
+                  <div class="q-chip" onclick="selectChip(this,'idea-chips-type')">Community</div>
+                  <div class="q-chip" onclick="selectChip(this,'idea-chips-type')">Services</div>
+                  <div class="q-chip" onclick="selectChip(this,'idea-chips-type')">Anything</div>
+                </div>
+              </div>
+              <div class="q-nav">
+                <button class="q-btn-back" onclick="ideaNextStep(0)">← BACK</button>
+                <button class="q-btn-next" onclick="ideaNextStep(2)">NEXT →</button>
+              </div>
+            </div>
+
+            <!-- Step 3: Reality check -->
+            <div class="q-panel" id="idea-qp-2">
+              <div class="field">
+                <label>How much time can you commit?</label>
+                <div class="q-chips" id="idea-chips-time">
+                  <div class="q-chip" onclick="selectChip(this,'idea-chips-time')">Side project</div>
+                  <div class="q-chip" onclick="selectChip(this,'idea-chips-time')">Part time</div>
+                  <div class="q-chip" onclick="selectChip(this,'idea-chips-time')">Full time</div>
+                </div>
+              </div>
+              <div class="field">
+                <label>Budget to start?</label>
+                <div class="q-chips" id="idea-chips-budget">
+                  <div class="q-chip" onclick="selectChip(this,'idea-chips-budget')">Zero</div>
+                  <div class="q-chip" onclick="selectChip(this,'idea-chips-budget')">Under ₹10k</div>
+                  <div class="q-chip" onclick="selectChip(this,'idea-chips-budget')">Some runway</div>
+                </div>
+              </div>
+              <div class="field">
+                <label>Building alone or with a team?</label>
+                <div class="q-chips" id="idea-chips-team">
+                  <div class="q-chip" onclick="selectChip(this,'idea-chips-team')">Solo</div>
+                  <div class="q-chip" onclick="selectChip(this,'idea-chips-team')">Have a team</div>
+                  <div class="q-chip" onclick="selectChip(this,'idea-chips-team')">Need to find one</div>
+                </div>
+              </div>
+              <div class="q-nav">
+                <button class="q-btn-back" onclick="ideaNextStep(1)">← BACK</button>
+              </div>
             </div>
           </div>
 
@@ -2684,17 +2781,95 @@
 
           <!-- CREATE mode -->
           <div class="input-mode" id="stack-mode-create">
-            <div class="field">
-              <label>Your Experience Level</label>
-              <select id="stack-create-level">
-                <option value="beginner">Beginner</option>
-                <option value="intermediate">Intermediate</option>
-                <option value="advanced">Advanced</option>
-              </select>
+            <!-- Step indicator -->
+            <div class="q-steps" id="stack-q-steps">
+              <div class="q-step-dot active" id="stack-dot-0"></div>
+              <div class="q-step-dot" id="stack-dot-1"></div>
+              <div class="q-step-dot" id="stack-dot-2"></div>
             </div>
-            <div class="field">
-              <label>What are you into?</label>
-              <input type="text" id="stack-interests" placeholder="e.g. gaming, finance, health, education, AI"/>
+            <div class="q-step-label" id="stack-q-label">Step 1 of 3 — Your level</div>
+
+            <!-- Step 1: Your level -->
+            <div class="q-panel active" id="stack-qp-0">
+              <div class="field">
+                <label>How long have you been coding?</label>
+                <div class="q-chips" id="stack-chips-exp">
+                  <div class="q-chip" onclick="selectChip(this,'stack-chips-exp')">Just started</div>
+                  <div class="q-chip" onclick="selectChip(this,'stack-chips-exp')">6mo - 1yr</div>
+                  <div class="q-chip" onclick="selectChip(this,'stack-chips-exp')">1-2 years</div>
+                  <div class="q-chip" onclick="selectChip(this,'stack-chips-exp')">2+ years</div>
+                </div>
+              </div>
+              <div class="field">
+                <label>What do you prefer building?</label>
+                <div class="q-chips" id="stack-chips-pref">
+                  <div class="q-chip" onclick="selectChip(this,'stack-chips-pref')">Frontend</div>
+                  <div class="q-chip" onclick="selectChip(this,'stack-chips-pref')">Backend</div>
+                  <div class="q-chip" onclick="selectChip(this,'stack-chips-pref')">Fullstack</div>
+                  <div class="q-chip" onclick="selectChip(this,'stack-chips-pref')">No idea yet</div>
+                </div>
+              </div>
+              <div class="field">
+                <label>Biggest thing you've shipped so far</label>
+                <input type="text" id="stack-shipped" placeholder="e.g. a todo app, nothing yet, a college portal"/>
+              </div>
+              <div class="q-nav">
+                <button class="q-btn-next" onclick="stackNextStep(1)">NEXT →</button>
+              </div>
+            </div>
+
+            <!-- Step 2: Your goal -->
+            <div class="q-panel" id="stack-qp-1">
+              <div class="field">
+                <label>Why are you building this?</label>
+                <div class="q-chips" id="stack-chips-goal">
+                  <div class="q-chip" onclick="selectChip(this,'stack-chips-goal')">Get a job</div>
+                  <div class="q-chip" onclick="selectChip(this,'stack-chips-goal')">Learn properly</div>
+                  <div class="q-chip" onclick="selectChip(this,'stack-chips-goal')">Build a startup</div>
+                  <div class="q-chip" onclick="selectChip(this,'stack-chips-goal')">Freelance</div>
+                  <div class="q-chip" onclick="selectChip(this,'stack-chips-goal')">Just for fun</div>
+                </div>
+              </div>
+              <div class="field">
+                <label>Time you can commit weekly</label>
+                <div class="q-chips" id="stack-chips-time">
+                  <div class="q-chip" onclick="selectChip(this,'stack-chips-time')">Under 5hrs</div>
+                  <div class="q-chip" onclick="selectChip(this,'stack-chips-time')">5-10hrs</div>
+                  <div class="q-chip" onclick="selectChip(this,'stack-chips-time')">10-20hrs</div>
+                  <div class="q-chip" onclick="selectChip(this,'stack-chips-time')">Full time</div>
+                </div>
+              </div>
+              <div class="field">
+                <label>Deadline pressure?</label>
+                <div class="q-chips" id="stack-chips-deadline">
+                  <div class="q-chip" onclick="selectChip(this,'stack-chips-deadline')">No rush</div>
+                  <div class="q-chip" onclick="selectChip(this,'stack-chips-deadline')">1-2 months</div>
+                  <div class="q-chip" onclick="selectChip(this,'stack-chips-deadline')">I needed this yesterday</div>
+                </div>
+              </div>
+              <div class="q-nav">
+                <button class="q-btn-back" onclick="stackNextStep(0)">← BACK</button>
+                <button class="q-btn-next" onclick="stackNextStep(2)">NEXT →</button>
+              </div>
+            </div>
+
+            <!-- Step 3: Interests & constraints -->
+            <div class="q-panel" id="stack-qp-2">
+              <div class="field">
+                <label>Domains that excite you</label>
+                <input type="text" id="stack-interests" placeholder="e.g. fintech, games, AI, health, education"/>
+              </div>
+              <div class="field">
+                <label>Languages / frameworks you've touched</label>
+                <input type="text" id="stack-known" placeholder="e.g. React, basic Python, nothing yet"/>
+              </div>
+              <div class="field">
+                <label>Something specific you want to learn from this</label>
+                <input type="text" id="stack-learn" placeholder="e.g. databases, APIs, auth, deployment"/>
+              </div>
+              <div class="q-nav">
+                <button class="q-btn-back" onclick="stackNextStep(1)">← BACK</button>
+              </div>
             </div>
           </div>
 
@@ -3671,6 +3846,48 @@
     // ── IDEA ──
     let ideaMode = 'check';
 
+
+    // ── CHIP SELECTOR ──
+    function selectChip(el, groupId) {
+      document.querySelectorAll('#' + groupId + ' .q-chip').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+    }
+
+    function getChipValue(groupId) {
+      const sel = document.querySelector('#' + groupId + ' .q-chip.selected');
+      return sel ? sel.innerText : '';
+    }
+
+    // ── IDEA QUESTIONNAIRE NAV ──
+    let ideaQStep = 0;
+    const IDEA_STEP_LABELS = ['Step 1 of 3 — Who are you?', 'Step 2 of 3 — What drives you?', 'Step 3 of 3 — Reality check'];
+
+    function ideaNextStep(to) {
+      document.getElementById('idea-qp-' + ideaQStep).classList.remove('active');
+      document.getElementById('idea-dot-' + ideaQStep).classList.remove('active');
+      document.getElementById('idea-dot-' + ideaQStep).classList.add('done');
+      ideaQStep = to;
+      document.getElementById('idea-qp-' + ideaQStep).classList.add('active');
+      document.getElementById('idea-dot-' + ideaQStep).classList.add('active');
+      if (ideaQStep < 3) document.getElementById('idea-dot-' + ideaQStep).classList.remove('done');
+      document.getElementById('idea-q-label').innerText = IDEA_STEP_LABELS[ideaQStep];
+    }
+
+    // ── STACK QUESTIONNAIRE NAV ──
+    let stackQStep = 0;
+    const STACK_STEP_LABELS = ['Step 1 of 3 — Your level', 'Step 2 of 3 — Your goal', 'Step 3 of 3 — Interests & constraints'];
+
+    function stackNextStep(to) {
+      document.getElementById('stack-qp-' + stackQStep).classList.remove('active');
+      document.getElementById('stack-dot-' + stackQStep).classList.remove('active');
+      document.getElementById('stack-dot-' + stackQStep).classList.add('done');
+      stackQStep = to;
+      document.getElementById('stack-qp-' + stackQStep).classList.add('active');
+      document.getElementById('stack-dot-' + stackQStep).classList.add('active');
+      if (stackQStep < 3) document.getElementById('stack-dot-' + stackQStep).classList.remove('done');
+      document.getElementById('stack-q-label').innerText = STACK_STEP_LABELS[stackQStep];
+    }
+
     function switchIdeaMode(mode) {
       ideaMode = mode;
       document.getElementById('idea-mode-check').classList.toggle('active', mode === 'check');
@@ -3681,6 +3898,8 @@
       if (mode === 'create') {
         btn.innerText = 'GENERATE IDEAS 💡';
         btn.dataset.label = 'GENERATE IDEAS 💡';
+        // reset questionnaire to step 0
+        if (ideaQStep !== 0) ideaNextStep(0);
       } else {
         btn.innerText = 'CHECK MY IDEA 💡';
         btn.dataset.label = 'CHECK MY IDEA 💡';
@@ -3696,8 +3915,15 @@
       if (ideaMode === 'create') {
         const skills = document.getElementById('idea-skills').value.trim();
         const interests = document.getElementById('idea-interests').value.trim();
-        if (!skills || !interests) { setLoading(btn, false); return alert('Fill in your skills and interests!'); }
-        data = await callAPI('/api/idea', { mode: 'create', skills, interests, comic });
+        const edge = document.getElementById('idea-edge').value.trim();
+        const role = getChipValue('idea-chips-role');
+        const market = getChipValue('idea-chips-market');
+        const ideaType = getChipValue('idea-chips-type');
+        const time = getChipValue('idea-chips-time');
+        const budget = getChipValue('idea-chips-budget');
+        const team = getChipValue('idea-chips-team');
+        if (!skills || !interests) { setLoading(btn, false); return alert('Fill in at least your skills and interests!'); }
+        data = await callAPI('/api/idea', { mode: 'create', skills, interests, edge, role, market, idea_type: ideaType, time, budget, team, comic });
       } else {
         const idea = document.getElementById('idea-input').value;
         const market = document.getElementById('idea-market').value;
@@ -3749,10 +3975,17 @@
 
       let data;
       if (stackMode === 'create') {
-        const level = document.getElementById('stack-create-level').value;
         const interests = document.getElementById('stack-interests').value.trim();
-        if (!interests) { setLoading(btn, false); return alert('Tell us what interests you!'); }
-        data = await callAPI('/api/stack', { mode: 'create', level, interests, comic });
+        const shipped = document.getElementById('stack-shipped').value.trim();
+        const known = document.getElementById('stack-known').value.trim();
+        const learn = document.getElementById('stack-learn').value.trim();
+        const exp = getChipValue('stack-chips-exp');
+        const pref = getChipValue('stack-chips-pref');
+        const goal = getChipValue('stack-chips-goal');
+        const time = getChipValue('stack-chips-time');
+        const deadline = getChipValue('stack-chips-deadline');
+        if (!interests) { setLoading(btn, false); return alert('Tell us what domains interest you!'); }
+        data = await callAPI('/api/stack', { mode: 'create', interests, shipped, known, learn, exp, pref, goal, time, deadline, comic });
       } else {
         const project = document.getElementById('stack-project').value;
         const level = document.getElementById('stack-level').value;
