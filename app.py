@@ -3,7 +3,7 @@ from groq import Groq
 from comics import get_comic_prompt, get_resume_prompt, get_garbage_prompt, is_garbage_input, COMIC_OPTIONS
 from dotenv import load_dotenv
 from supabase import create_client, Client
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import os
 
 load_dotenv()
@@ -17,6 +17,10 @@ client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 # Supabase client
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY")
+
+if not SUPABASE_URL or not SUPABASE_ANON_KEY:
+    raise RuntimeError("Missing SUPABASE_URL or SUPABASE_ANON_KEY — check your .env or Render env vars")
+
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 # XP values per tool
@@ -41,16 +45,14 @@ def log_tool_use(tool_name):
     try:
         user = session.get("user")
         if not user:
-            print(f"[TOOL_USES] Skipping — no user in session")
             return
-        print(f"[TOOL_USES] Attempting insert for user {user['id']} tool {tool_name}")
-        result = supabase.table("tool_uses").insert({
+        supabase.table("tool_uses").insert({
             "user_id": user["id"],
             "tool_name": tool_name,
             "xp_earned": TOOL_XP.get(tool_name, 0),
             "used_at": datetime.now(timezone.utc).isoformat()
         }).execute()
-        print(f"[TOOL_USES] Insert result: {result}")
+        print(f"[TOOL_USES] {tool_name} logged for {user['id']}")
     except Exception as e:
         print(f"[TOOL_USES] Failed to log {tool_name}: {type(e).__name__}: {e}")
 
@@ -179,10 +181,11 @@ def leaderboard():
 @app.route("/api/leaderboard/weekly", methods=["GET"])
 def leaderboard_weekly():
     try:
-        # Get start of current week (Monday)
+        # Get start of current week (Monday) — safe for all days/months
         now = datetime.now(timezone.utc)
-        week_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        week_start = week_start.replace(day=now.day - now.weekday())
+        week_start = (now - timedelta(days=now.weekday())).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
         week_start_iso = week_start.isoformat()
 
         # Sum XP earned per user this week from tool_uses
@@ -243,7 +246,15 @@ def leaderboard_personal():
 @app.route("/api/roast", methods=["POST"])
 def roast():
     data = request.json
-    prompt = get_comic_prompt(data.get("comic"), data.get("salary"), data.get("city"), data.get("age"), data.get("field"))
+    comic = data.get("comic", "abhishek_upmanyu")
+
+    # Validate text fields before passing to Groq
+    for val, label in [(data.get("city", ""), "city"), (data.get("field", ""), "field")]:
+        garbage, g_reason = is_garbage_input(str(val))
+        if garbage:
+            return jsonify({"message": ask_groq(get_garbage_prompt(comic, "salary", val, g_reason))})
+
+    prompt = get_comic_prompt(comic, data.get("salary"), data.get("city"), data.get("age"), data.get("field"))
     result = ask_groq(prompt)
     log_tool_use("roast")
     return jsonify({"message": result})
@@ -305,13 +316,21 @@ def stack():
 def resume():
     data = request.json
     mode = data.get("mode")
-    comic = data.get("comic")
+    comic = data.get("comic", "abhishek_upmanyu")
+
     if mode == "paste":
         resume_content = data.get("resume_text", "").strip()
     else:
         resume_content = f"Name/Title: {data.get('name','')}\nExperience: {data.get('experience','')}\nSkills: {data.get('skills','')}\nEducation: {data.get('education','')}"
+
     if not resume_content:
         return jsonify({"error": "No resume content provided"}), 400
+
+    # Garbage check at route level (consistent with other tools)
+    garbage, g_reason = is_garbage_input(resume_content)
+    if garbage:
+        return jsonify({"message": ask_groq(get_garbage_prompt(comic, "resume", resume_content, g_reason))})
+
     result = ask_groq(get_resume_prompt(comic, resume_content))
     log_tool_use("resume")
     return jsonify({"message": result})
