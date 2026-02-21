@@ -26,10 +26,10 @@
       --display: 'Bebas Neue', sans-serif;
 
       /* Tool palettes */
-      --roaster: #ff4d00;
-      --roaster-glow: rgba(255, 77, 0, 0.15);
-      --idea: #00a8ff;
-      --idea-glow: rgba(0, 168, 255, 0.15);
+      --roaster: #0077b5;
+      --roaster-glow: rgba(0, 119, 181, 0.15);
+      --idea: #ff6b6b;
+      --idea-glow: rgba(255, 107, 107, 0.15);
       --stack: #00e676;
       --stack-glow: rgba(0, 230, 118, 0.15);
       --resume: #a855f7;
@@ -1165,7 +1165,7 @@
     /* Roaster */
     .card-roaster::before { background: var(--roaster); }
     .card-roaster::after { background: radial-gradient(ellipse at top left, var(--roaster-glow), transparent 70%); }
-    .card-roaster:hover { border-color: rgba(255,77,0,0.4); box-shadow: 0 0 30px rgba(255,77,0,0.08); }
+    .card-roaster:hover { border-color: rgba(0,119,181,0.4); box-shadow: 0 0 30px rgba(0,119,181,0.08); }
     .card-roaster .tool-number { color: var(--border-bright); transition: color 0.2s; }
     .card-roaster:hover .tool-number { color: var(--roaster); }
     .card-roaster .tool-tag { color: var(--roaster); border-color: var(--roaster); }
@@ -1174,7 +1174,7 @@
     /* Idea */
     .card-idea::before { background: var(--idea); }
     .card-idea::after { background: radial-gradient(ellipse at top left, var(--idea-glow), transparent 70%); }
-    .card-idea:hover { border-color: rgba(0,168,255,0.4); box-shadow: 0 0 30px rgba(0,168,255,0.08); }
+    .card-idea:hover { border-color: rgba(255,107,107,0.4); box-shadow: 0 0 30px rgba(255,107,107,0.08); }
     .card-idea .tool-number { color: var(--border-bright); transition: color 0.2s; }
     .card-idea:hover .tool-number { color: var(--idea); }
     .card-idea .tool-tag { color: var(--idea); border-color: var(--idea); }
@@ -1422,7 +1422,7 @@
     .modal-roaster { border-top: 2px solid var(--roaster); }
     .modal-roaster .modal-sub { color: var(--roaster); }
     .modal-roaster .submit-btn { background: var(--roaster); }
-    .modal-roaster .submit-btn:hover { background: #ff6620; }
+    .modal-roaster .submit-btn:hover { background: #0066a0; }
     .modal-roaster .verdict-panel { border-left-color: var(--roaster); }
     .modal-roaster .result-label { color: var(--roaster); }
     .modal-roaster .verdict-placeholder { color: var(--roaster); }
@@ -1431,7 +1431,7 @@
     .modal-idea { border-top: 2px solid var(--idea); }
     .modal-idea .modal-sub { color: var(--idea); }
     .modal-idea .submit-btn { background: var(--idea); }
-    .modal-idea .submit-btn:hover { background: #33bbff; }
+    .modal-idea .submit-btn:hover { background: #ff8e8e; }
     .modal-idea .verdict-panel { border-left-color: var(--idea); }
     .modal-idea .result-label { color: var(--idea); }
     .modal-idea .verdict-placeholder { color: var(--idea); }
@@ -2413,14 +2413,14 @@
     <div class="section-label">Choose your weapon</div>
     <div class="tools-grid">
 
-      <!-- Salary Roaster -->
+      <!-- LinkedIn Reality Check -->
       <div class="tool-card card-roaster" onclick="openModal('roaster')">
         <div class="tool-number">01</div>
-        <div class="tool-icon">🔥</div>
-        <div class="tool-name">SALARY ROASTER</div>
-        <p class="tool-desc">Enter your salary, city, age and field. We'll tell you exactly how cooked you are — financially speaking.</p>
-        <span class="tool-tag">Roast Me</span>
-        <div class="tool-xp">+25 XP per roast</div>      </div>
+        <div class="tool-icon">💼</div>
+        <div class="tool-name">LINKEDIN REALITY CHECK</div>
+        <p class="tool-desc">Paste your LinkedIn post, bio, headline, or connection request. We'll tell you exactly what's cringe — and fix it.</p>
+        <span class="tool-tag">Check My Profile</span>
+        <div class="tool-xp">+25 XP per check</div>      </div>
 
       <!-- Idea Checker -->
       <div class="tool-card card-idea" onclick="openModal('idea')">
@@ -2457,33 +2457,26 @@
 
   <!-- MODALS -->
 
-  <!-- Salary Roaster Modal -->
+  <!-- LinkedIn Reality Check Modal -->
   <div class="modal-overlay" id="modal-roaster">
     <div class="modal modal-wide modal-roaster">
       <button class="modal-close" onclick="closeModal('roaster')">✕</button>
-      <div class="modal-title">SALARY ROASTER</div>
-      <div class="modal-sub">// enter your details. brace yourself.</div>
+      <div class="modal-title">LINKEDIN REALITY CHECK</div>
+      <div class="modal-sub">// paste it. we'll tell you if it slaps or flops.</div>
       <div class="modal-columns">
         <!-- Left: Inputs -->
         <div class="modal-left">
-          <div class="field">
-            <label>Monthly Salary (₹)</label>
-            <input type="number" id="roaster-salary" placeholder="e.g. 50000"/>
-          </div>
-          <div class="fields-row">
-            <div class="field">
-              <label>City</label>
-              <input type="text" id="roaster-city" placeholder="e.g. Bangalore"/>
-            </div>
-            <div class="field">
-              <label>Age</label>
-              <input type="number" id="roaster-age" placeholder="e.g. 24"/>
-            </div>
+          <div class="mode-toggle">
+            <button class="mode-btn active" id="btn-li-post" onclick="switchLinkedInType('post')">Post</button>
+            <button class="mode-btn" id="btn-li-bio" onclick="switchLinkedInType('bio')">Bio</button>
+            <button class="mode-btn" id="btn-li-headline" onclick="switchLinkedInType('headline')">Headline</button>
+            <button class="mode-btn" id="btn-li-connect" onclick="switchLinkedInType('connection_request')">Connection Req</button>
           </div>
           <div class="field">
-            <label>Field / Industry</label>
-            <input type="text" id="roaster-field" placeholder="e.g. Software Engineer"/>
+            <label id="linkedin-content-label">Your LinkedIn Post</label>
+            <textarea id="linkedin-content" placeholder="Paste your LinkedIn post here..." style="min-height: 140px;"></textarea>
           </div>
+          <input type="hidden" id="linkedin-type" value="post"/>
           <div class="field">
             <label>Roast Style</label>
             <select id="roaster-comic">
@@ -2496,20 +2489,22 @@
               <option value="madhur_virli">Madhur Virli — Dark IIT Cynicism</option>
             </select>
           </div>
-          <button class="submit-btn" onclick="submitRoaster()">ROAST ME 🔥</button>
+          <button class="submit-btn" onclick="submitLinkedIn()">CHECK IT 💼</button>
         </div>
 
         <!-- Right: Output -->
         <div class="modal-right">
           <div class="verdict-panel" id="verdict-panel">
             <div class="verdict-waiting" id="verdict-waiting">
-              <div class="verdict-icon">⚡</div>
-              <div class="verdict-placeholder">// awaiting verdict...</div>
-              <div class="verdict-hint">Fill in your details and hit Roast Me</div>
+              <div class="verdict-icon">💼</div>
+              <div class="verdict-placeholder">// awaiting your content...</div>
+              <div class="verdict-hint">Paste your LinkedIn content and hit Check It</div>
             </div>
             <div class="verdict-result" id="verdict-result" style="display:none">
-              <div class="result-label">// the verdict</div>
+              <div class="result-label">// verdict</div>
+              <div class="result-label" id="linkedin-verdict-label" style="font-size:11px;opacity:0.6;margin-bottom:6px;"></div>
               <div id="roaster-text"></div>
+              <div id="linkedin-fixed-text" style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);"></div>
               <div class="xp-toast" id="roaster-xp"></div>
               <button class="share-btn" id="roaster-share-btn" onclick="openSharePanel('roaster')">⬡ SHARE RESULT</button>
             </div>
@@ -2631,13 +2626,23 @@
 
           <!-- Form mode -->
           <div class="input-mode" id="resume-mode-form">
-            <div class="field">
-              <label>Full Name & Job Title</label>
-              <input type="text" id="form-name" placeholder="e.g. Pushkar Gupta — Backend Developer"/>
+            <div class="fields-row">
+              <div class="field">
+                <label>Full Name</label>
+                <input type="text" id="form-name" placeholder="e.g. Pushkar Gupta"/>
+              </div>
+              <div class="field">
+                <label>Target Role</label>
+                <input type="text" id="form-role" placeholder="e.g. Backend Developer"/>
+              </div>
             </div>
             <div class="field">
               <label>Work Experience</label>
-              <textarea id="form-experience" placeholder="e.g. 2 years at XYZ as intern, built a Flask app..." style="min-height: 80px;"></textarea>
+              <textarea id="form-experience" placeholder="e.g. 6 month internship at XYZ, built a Flask API..." style="min-height: 70px;"></textarea>
+            </div>
+            <div class="field">
+              <label>Projects</label>
+              <textarea id="form-projects" placeholder="e.g. ANVIL — AI tool platform with Groq, Flask, Supabase. Live at anvilapp.onrender.com" style="min-height: 70px;"></textarea>
             </div>
             <div class="fields-row">
               <div class="field">
@@ -2682,6 +2687,10 @@
               <div class="verdict-half fix-half">
                 <div class="verdict-half-label fix-label">// fixed version</div>
                 <div class="verdict-half-text" id="resume-fixed-text"></div>
+              </div>
+              <div class="verdict-half" id="resume-why-section" style="display:none;">
+                <div class="verdict-half-label" style="color:var(--blue);">// why it's better</div>
+                <div class="verdict-half-text" id="resume-why-text"></div>
               </div>
               <div style="padding: 12px 24px; border-top: 1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
                 <div class="xp-toast" id="resume-xp"></div>
@@ -3388,23 +3397,60 @@
       btn.innerHTML = loading ? '<span class="spinner"></span> THINKING...' : btn.dataset.label;
     }
 
-    async function submitRoaster() {
+    function switchLinkedInType(type) {
+      document.getElementById('linkedin-type').value = type;
+      const labels = {
+        post: 'Your LinkedIn Post',
+        bio: 'Your LinkedIn About / Bio',
+        headline: 'Your LinkedIn Headline',
+        connection_request: 'Your Connection Request Message'
+      };
+      const placeholders = {
+        post: 'Paste your LinkedIn post here...',
+        bio: 'Paste your LinkedIn About section here...',
+        headline: 'Paste your LinkedIn headline here...',
+        connection_request: 'Paste your connection request message here...'
+      };
+      document.getElementById('linkedin-content-label').innerText = labels[type] || 'Your Content';
+      document.getElementById('linkedin-content').placeholder = placeholders[type] || 'Paste your content here...';
+      ['post','bio','headline','connect'].forEach(t => {
+        const btnId = 'btn-li-' + t;
+        const el = document.getElementById(btnId);
+        if (el) el.classList.remove('active');
+      });
+      const activeId = type === 'connection_request' ? 'btn-li-connect' : 'btn-li-' + type;
+      const activeEl = document.getElementById(activeId);
+      if (activeEl) activeEl.classList.add('active');
+    }
+
+    async function submitLinkedIn() {
       const btn = document.querySelector('#modal-roaster .submit-btn');
-      btn.dataset.label = 'ROAST ME 🔥';
-      const salary = document.getElementById('roaster-salary').value;
-      const city = document.getElementById('roaster-city').value;
-      const age = document.getElementById('roaster-age').value;
-      const field = document.getElementById('roaster-field').value;
+      btn.dataset.label = 'CHECK IT 💼';
+      const content = document.getElementById('linkedin-content').value.trim();
+      const content_type = document.getElementById('linkedin-type').value;
       const comic = document.getElementById('roaster-comic').value;
-      if (!salary || !city || !age || !field) return alert('Fill in all fields!');
+      if (!content) return alert('Paste your LinkedIn content first!');
       setLoading(btn, true);
-      const data = await callAPI('/api/roast', { salary, city, age, field, comic });
+      const data = await callAPI('/api/linkedin', { content, content_type, comic });
       setLoading(btn, false);
       document.getElementById('verdict-waiting').style.display = 'none';
       document.getElementById('verdict-result').style.display = 'block';
-      document.getElementById('roaster-text').innerText = data.message;
-      const earned = addXP(25); // Salary Roaster
+
+      // Parse [VERDICT] and [FIXED] sections
+      const raw = data.message || '';
+      const verdictMatch = raw.match(/(?:\[VERDICT\]|#\s*VERDICT)([\s\S]*?)(?=(?:\[FIXED\]|#\s*FIXED)|$)/i);
+      const fixedMatch = raw.match(/(?:\[FIXED\]|#\s*FIXED)([\s\S]*?)$/i);
+      const verdictText = verdictMatch ? verdictMatch[1].trim() : raw;
+      const fixedText = fixedMatch ? fixedMatch[1].trim() : '';
+
+      document.getElementById('roaster-text').innerText = verdictText;
+      if (fixedText) {
+        document.getElementById('linkedin-fixed-text').innerText = fixedText;
+        document.getElementById('linkedin-verdict-label').innerText = '// fixed version ↓';
+      }
+      const earned = addXP(25);
       document.getElementById('roaster-xp').innerText = `+${earned} XP earned!`;
+      showXPFloat(earned, btn);
       document.getElementById('roaster-share-btn').classList.add('visible');
     }
 
@@ -3463,7 +3509,9 @@
         const name = document.getElementById('form-name').value.trim();
         if (!name) return alert('Fill in at least your name!');
         body.name = name;
+        body.role = document.getElementById('form-role').value;
         body.experience = document.getElementById('form-experience').value;
+        body.projects = document.getElementById('form-projects').value;
         body.skills = document.getElementById('form-skills').value;
         body.education = document.getElementById('form-education').value;
       }
@@ -3473,18 +3521,24 @@
       const data = await callAPI('/api/resume', body);
       setLoading(btn, false);
 
-      // Parse [ROAST] and [FIXED] sections from response
+      // Parse [ROAST], [FIXED], [WHY] sections from response
       const raw = data.message || '';
-      const roastMatch = raw.match(/(?:\[ROAST\]|#\s*ROAST)([\s\S]*?)(?=(?:\[FIXED\]|#\s*FIXED)|$)/i);
-      const fixedMatch = raw.match(/(?:\[FIXED\]|#\s*FIXED)([\s\S]*?)$/i);
+      const roastMatch = raw.match(/(?:\[ROAST\]|#\s*ROAST)([\s\S]*?)(?=(?:\[FIXED\]|#\s*FIXED|\[WHY\]|#\s*WHY)|$)/i);
+      const fixedMatch = raw.match(/(?:\[FIXED\]|#\s*FIXED)([\s\S]*?)(?=(?:\[WHY\]|#\s*WHY)|$)/i);
+      const whyMatch = raw.match(/(?:\[WHY\]|#\s*WHY)([\s\S]*?)$/i);
       const roastText = roastMatch ? roastMatch[1].trim() : raw;
       const fixedText = fixedMatch ? fixedMatch[1].trim() : '(No fixed version returned — try again)';
+      const whyText = whyMatch ? whyMatch[1].trim() : '';
 
       document.getElementById('resume-verdict-waiting').style.display = 'none';
       document.getElementById('resume-verdict-result').style.display = 'flex';
       document.getElementById('resume-roast-text').innerText = roastText;
       document.getElementById('resume-fixed-text').innerText = fixedText;
-      const earned = addXP(30); // Resume Roaster
+      if (whyText) {
+        document.getElementById('resume-why-text').innerText = whyText;
+        document.getElementById('resume-why-section').style.display = 'block';
+      }
+      const earned = addXP(35); // Resume Roaster
       document.getElementById('resume-xp').innerText = `+${earned} XP earned!`;
       showXPFloat(earned, btn);
       document.getElementById('resume-share-btn').classList.add('visible');
@@ -3502,10 +3556,10 @@
     };
 
     const TOOL_META = {
-      roaster: { name: 'SALARY ROASTER', icon: '🔥', color: '#ff4d00' },
-      idea:    { name: 'IDEA CHECKER',   icon: '💡', color: '#00a8ff' },
-      stack:   { name: 'STACK PICKER',   icon: '⚙️', color: '#00e676' },
-      resume:  { name: 'RESUME ROASTER', icon: '📄', color: '#a855f7' },
+      roaster: { name: 'LINKEDIN REALITY CHECK', icon: '💼', color: '#0077b5' },
+      idea:    { name: 'IDEA CHECKER',            icon: '💡', color: '#ff6b6b' },
+      stack:   { name: 'STACK PICKER',            icon: '⚙️', color: '#00e676' },
+      resume:  { name: 'RESUME ROASTER',          icon: '📄', color: '#a855f7' },
     };
 
     function openSharePanel(tool) {
