@@ -2897,9 +2897,31 @@
     async function loadPersonalLb() {
       const content = document.getElementById('lb-personal-content');
       if (!window.__anvilUser) {
-        content.innerHTML = `<div class="lb-guest-msg">
-          <p>// sign in to track your rank, streak, and achievements.</p>
-          <button class="lb-signin-btn" onclick="window.location.href='/auth/login'">⬡ SIGN IN WITH GOOGLE</button>
+        // Guest — show local stats with Anonymous
+        const unlockedIds = new Set();
+        const achievementsHtml = ALL_ACHIEVEMENTS.map(a =>
+          `<div class="lb-achievement locked">
+            <span class="lb-achievement-icon">${a.icon}</span>
+            <span>${a.name}</span>
+          </div>`).join('');
+        content.innerHTML = `<div class="lb-personal-wrap">
+          <div class="lb-personal-card">
+            <div>
+              <div class="lb-personal-name">ANONYMOUS</div>
+              <div class="lb-personal-rank">// GLOBAL RANK #— · ${getLevelName(xp)}</div>
+            </div>
+          </div>
+          <div class="lb-personal-stats">
+            <div class="lb-stat-box"><div class="lb-stat-num" style="color:var(--accent)">${xp}</div><div class="lb-stat-label">Total XP</div></div>
+            <div class="lb-stat-box"><div class="lb-stat-num" style="color:#ff6b35">${streak}🔥</div><div class="lb-stat-label">Streak</div></div>
+            <div class="lb-stat-box"><div class="lb-stat-num" style="color:#00e5ff">${uses}</div><div class="lb-stat-label">Tools Used</div></div>
+          </div>
+          <div class="lb-achievements-title">// achievements</div>
+          <div class="lb-achievements-grid">${achievementsHtml}</div>
+          <div style="margin-top:20px;text-align:center;">
+            <p style="font-family:var(--mono);font-size:11px;color:var(--text-dim);margin-bottom:12px;">// sign in to save your rank and unlock achievements</p>
+            <button class="lb-signin-btn" onclick="window.location.href='/auth/login'">⬡ SIGN IN WITH GOOGLE</button>
+          </div>
         </div>`;
         return;
       }
@@ -2907,6 +2929,10 @@
       try {
         const res = await fetch('/api/leaderboard/personal');
         const d = await res.json();
+        // Get name + avatar from the meta tag Flask injected — API only returns stats
+        const userMeta = document.getElementById('anvil-user-meta');
+        const userName = userMeta ? userMeta.dataset.name : 'Anonymous';
+        const userAvatar = userMeta ? userMeta.dataset.avatar : '';
         const unlockedIds = new Set((d.achievements || []).map(a => a.achievement_id));
         const achievementsHtml = ALL_ACHIEVEMENTS.map(a =>
           `<div class="lb-achievement ${unlockedIds.has(a.id) ? '' : 'locked'}">
@@ -2915,10 +2941,10 @@
           </div>`).join('');
         content.innerHTML = `<div class="lb-personal-wrap">
           <div class="lb-personal-card">
-            <img class="lb-personal-avatar" src="${d.avatar||''}" alt="av" onerror="this.style.display='none'"/>
+            <img class="lb-personal-avatar" src="${userAvatar}" alt="av" onerror="this.style.display='none'"/>
             <div>
-              <div class="lb-personal-name">${d.name || 'Anonymous'}</div>
-              <div class="lb-personal-rank">// GLOBAL RANK #${d.rank} · ${getLevelName(d.xp)}</div>
+              <div class="lb-personal-name">${userName}</div>
+              <div class="lb-personal-rank">// GLOBAL RANK #${d.rank || '—'} · ${getLevelName(d.xp)}</div>
             </div>
           </div>
           <div class="lb-personal-stats">
