@@ -3741,8 +3741,6 @@
         btn.dataset.label = 'PICK MY STACK ⚙️';
       }
     }
-      }
-    }
 
     async function submitStack() {
       const btn = document.getElementById('stack-submit-btn');
@@ -4000,7 +3998,7 @@
       ctx.fillStyle = 'rgba(255,255,255,0.35)';
       ctx.fillText('// ' + shareData.toolName, pad, topY);
 
-      // XP + Level badge — pushed below tool name to avoid overlap
+      // XP + Level badge — below tool name to avoid overlap
       const levelY = topY + w * 0.052;
       ctx.textAlign = 'right';
       ctx.font = `bold ${w * 0.036}px 'Bebas Neue', sans-serif`;
@@ -4091,7 +4089,7 @@
       ctx.fillStyle = 'rgba(255,255,255,0.3)';
       ctx.fillText('// ' + shareData.toolName, pad, topY);
 
-      // XP + Level badge — pushed below tool name to avoid overlap
+      // XP + Level badge — below tool name to avoid overlap
       const badgeX = cx + cw - cw*0.1;
       const meshLevelY = topY + w * 0.052;
       ctx.textAlign = 'right';
