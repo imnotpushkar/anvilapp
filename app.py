@@ -3,6 +3,7 @@ from groq import Groq
 from comics import get_comic_prompt, get_resume_prompt, get_garbage_prompt, is_garbage_input, COMIC_OPTIONS
 from dotenv import load_dotenv
 from supabase import create_client, Client
+from datetime import datetime, timezone
 import os
 
 load_dotenv()
@@ -18,6 +19,14 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
+# XP values per tool
+TOOL_XP = {
+    "roast": 25,
+    "idea": 30,
+    "stack": 20,
+    "resume": 35
+}
+
 
 def ask_groq(prompt):
     response = client.chat.completions.create(
@@ -25,6 +34,22 @@ def ask_groq(prompt):
         messages=[{"role": "user", "content": prompt}]
     )
     return response.choices[0].message.content
+
+
+def log_tool_use(tool_name):
+    """Insert a row into tool_uses if user is logged in. Silent fail so it never breaks a tool."""
+    try:
+        user = session.get("user")
+        if not user:
+            return
+        supabase.table("tool_uses").insert({
+            "user_id": user["id"],
+            "tool_name": tool_name,
+            "xp_earned": TOOL_XP.get(tool_name, 0),
+            "used_at": datetime.now(timezone.utc).isoformat()
+        }).execute()
+    except Exception as e:
+        print(f"[TOOL_USES] Failed to log {tool_name}: {e}")
 
 
 @app.route("/ping")
@@ -133,7 +158,6 @@ def save_xp():
 def leaderboard():
     try:
         result = supabase.table("user_stats").select("xp, user_id, users(display_name, avatar_url)").order("xp", desc=True).limit(50).execute()
-        # Normalise rows — fill in Anonymous for users not in the users table
         rows = []
         for row in result.data:
             user_info = row.get("users") or {}
@@ -151,8 +175,45 @@ def leaderboard():
 
 @app.route("/api/leaderboard/weekly", methods=["GET"])
 def leaderboard_weekly():
-    # Will be populated once tool_uses inserts are wired up
-    return jsonify([]), 200
+    try:
+        # Get start of current week (Monday)
+        now = datetime.now(timezone.utc)
+        week_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        week_start = week_start.replace(day=now.day - now.weekday())
+        week_start_iso = week_start.isoformat()
+
+        # Sum XP earned per user this week from tool_uses
+        result = supabase.table("tool_uses").select("user_id, xp_earned").gte("used_at", week_start_iso).execute()
+
+        # Aggregate XP per user
+        totals = {}
+        for row in result.data:
+            uid = row["user_id"]
+            totals[uid] = totals.get(uid, 0) + row.get("xp_earned", 0)
+
+        if not totals:
+            return jsonify([]), 200
+
+        # Get display names for all user_ids in the result
+        user_ids = list(totals.keys())
+        users_result = supabase.table("users").select("id, display_name, avatar_url").in_("id", user_ids).execute()
+        user_map = {u["id"]: u for u in (users_result.data or [])}
+
+        # Build sorted leaderboard
+        rows = []
+        for uid, xp in sorted(totals.items(), key=lambda x: x[1], reverse=True)[:50]:
+            u = user_map.get(uid, {})
+            rows.append({
+                "user_id": uid,
+                "xp": xp,
+                "display_name": u.get("display_name") or "Anonymous",
+                "avatar_url": u.get("avatar_url") or ""
+            })
+
+        return jsonify(rows)
+    except Exception as e:
+        print(f"[WEEKLY] Error: {e}")
+        return jsonify([]), 200
 
 
 @app.route("/api/leaderboard/personal", methods=["GET"])
@@ -161,20 +222,28 @@ def leaderboard_personal():
     if not user:
         return jsonify({"error": "not logged in"}), 401
     try:
+        # Get user stats
         result = supabase.table("user_stats").select("*").eq("user_id", user["id"]).execute()
-        if result.data:
-            return jsonify(result.data[0])
-        return jsonify({"xp": 0, "streak": 0, "tools_used": 0})
+        stats = result.data[0] if result.data else {"xp": 0, "streak": 0, "tools_used": 0}
+
+        # Calculate rank — count how many users have strictly more XP
+        rank_result = supabase.table("user_stats").select("user_id", count="exact").gt("xp", stats.get("xp", 0)).execute()
+        rank = (rank_result.count or 0) + 1
+
+        stats["rank"] = rank
+        return jsonify(stats)
     except Exception as e:
         print(f"[PERSONAL] Error: {e}")
-        return jsonify({"xp": 0, "streak": 0, "tools_used": 0}), 200
+        return jsonify({"xp": 0, "streak": 0, "tools_used": 0, "rank": "—"}), 200
 
 
 @app.route("/api/roast", methods=["POST"])
 def roast():
     data = request.json
     prompt = get_comic_prompt(data.get("comic"), data.get("salary"), data.get("city"), data.get("age"), data.get("field"))
-    return jsonify({"message": ask_groq(prompt)})
+    result = ask_groq(prompt)
+    log_tool_use("roast")
+    return jsonify({"message": result})
 
 
 @app.route("/api/idea", methods=["POST"])
@@ -198,7 +267,9 @@ def idea():
     Idea: {idea_text}
     Target Market: {market_text}
     Keep it punchy, honest, and slightly brutal. 4-5 sentences max."""
-    return jsonify({"message": ask_groq(prompt)})
+    result = ask_groq(prompt)
+    log_tool_use("idea")
+    return jsonify({"message": result})
 
 
 @app.route("/api/stack", methods=["POST"])
@@ -222,7 +293,9 @@ def stack():
     DATABASE: ...
     HOSTING: ...
     WHY: one punchy sentence explaining the choice."""
-    return jsonify({"message": ask_groq(prompt)})
+    result = ask_groq(prompt)
+    log_tool_use("stack")
+    return jsonify({"message": result})
 
 
 @app.route("/api/resume", methods=["POST"])
@@ -236,7 +309,9 @@ def resume():
         resume_content = f"Name/Title: {data.get('name','')}\nExperience: {data.get('experience','')}\nSkills: {data.get('skills','')}\nEducation: {data.get('education','')}"
     if not resume_content:
         return jsonify({"error": "No resume content provided"}), 400
-    return jsonify({"message": ask_groq(get_resume_prompt(comic, resume_content))})
+    result = ask_groq(get_resume_prompt(comic, resume_content))
+    log_tool_use("resume")
+    return jsonify({"message": result})
 
 
 if __name__ == "__main__":
