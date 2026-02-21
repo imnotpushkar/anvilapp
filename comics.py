@@ -14,6 +14,9 @@ IMPORTANT TONE RULE: Always speak to the person as a peer — same age, same lev
 Never call them "beta", "baccha", "kiddo", or anything that implies you are older or superior.
 Bhai, yaar, bro, bc, arre — totally fine. Keep it equal energy throughout."""
 
+LINKEDIN_ENGLISH_NOTE = """
+LANGUAGE RULE FOR LINKEDIN: Write in clean, professional English only. No Hinglish, no Hindi words, no "yaar/bhai/bc/arre" in the actual LinkedIn output. The comic personality shapes the TONE — witty, sharp, anti-cringe — but the language must be English that works on LinkedIn for a global audience."""
+
 
 def get_ist_hour():
     """Returns current hour in IST (UTC+5:30)."""
@@ -387,7 +390,8 @@ You MUST respond in exactly this format — two sections, nothing else:
 Rewrite it. Make it sound like a real human with a real personality wrote it. Keep their core message but strip out all the cringe, buzzwords, and AI-smell. Show the actual rewritten version — not tips, the real thing. If it's a post, rewrite the post. If it's a bio, rewrite the bio. Be specific, not generic.
 
 Keep the verdict punchy. Keep the fix genuinely useful. They should wince at the verdict and actually use the fix.
-{PEER_TONE_NOTE}"""
+{PEER_TONE_NOTE}
+{LINKEDIN_ENGLISH_NOTE}"""
 
 
 def get_resume_prompt(comic, resume_content, mode="paste"):
@@ -486,7 +490,8 @@ Respond in exactly this format:
 [CREATED]
 The actual {goal} — ready to copy and paste. Nothing else. No preamble, no explanation.
 
-{PEER_TONE_NOTE}"""
+{PEER_TONE_NOTE}
+{LINKEDIN_ENGLISH_NOTE}"""
 
 
 def get_idea_create_prompt(comic, skills, interests, current_hour=None):
