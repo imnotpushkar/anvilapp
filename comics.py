@@ -439,6 +439,221 @@ Keep the roast punchy. Keep the fix genuinely useful. The [WHY] should make them
 {PEER_TONE_NOTE}"""
 
 
+def get_linkedin_create_prompt(comic, content_type, intent, current_hour=None):
+    if current_hour is None:
+        current_hour = get_ist_hour()
+    time_ctx = get_time_context(current_hour)
+
+    type_goal = {
+        "post": "a LinkedIn post",
+        "bio": "a LinkedIn About/Bio section",
+        "connection_request": "a LinkedIn connection request message",
+        "headline": "a LinkedIn headline",
+    }
+    type_rules = {
+        "post": "Strong opening line (not 'Excited to share'), real point of view, no buzzwords, no corporate speak. Sound like a real person. 150-250 words max.",
+        "bio": "First person, conversational, specific, memorable. Not a skills list, not third person. 100-150 words.",
+        "connection_request": "Specific reason for reaching out, not template energy, not 'I came across your profile'. Direct, human, under 200 characters.",
+        "headline": "Beyond job title, shows what they do and why it matters. No 'seeking opportunities'. Punchy, specific, under 120 characters.",
+    }
+    style_notes = {
+        "ravi_gupta":        "Write it like the most obvious, sensible thing anyone could say. No drama, no performance. Exactly what needs to be said, straight.",
+        "abhishek_upmanyu":  "Conversational, fast, self-aware. Smart person talking, not performing. No cringe, natural Hinglish tone where it fits.",
+        "anubhav_bassi":     "Grounded storytelling tone. Genuinely real, not performing for recruiters.",
+        "madhur_virli":      "No nonsense, zero corporate performance. Direct, a little dark, but real.",
+        "kaustubh_aggarwal": "Sounds like something a smart Delhi person would write half-scrolling Twitter. Casual on the surface, sharp underneath.",
+        "ashish_solanki":    "Warm, relatable, grounded. Feels human and genuine without trying to be viral.",
+        "samay_raina":       "Gen-z aware, internet-native, a little self-deprecating. Doesn't take itself too seriously but has something to say.",
+    }
+
+    style = style_notes.get(comic, style_notes["abhishek_upmanyu"])
+    goal = type_goal.get(content_type, "LinkedIn content")
+    rules = type_rules.get(content_type, "Write it well.")
+
+    return f"""You are a sharp content writer who hates corporate cringe. Write {goal} for someone.
+
+What they want to say / their context:
+{intent}
+
+Writing style: {style}
+Time context: {time_ctx}
+Rules: {rules}
+
+No buzzwords. No 'passionate about'. No 'excited to share'. No 'humbled'. No AI smell.
+
+Respond in exactly this format:
+
+[CREATED]
+The actual {goal} — ready to copy and paste. Nothing else. No preamble, no explanation.
+
+{PEER_TONE_NOTE}"""
+
+
+def get_idea_create_prompt(comic, skills, interests, current_hour=None):
+    if current_hour is None:
+        current_hour = get_ist_hour()
+    time_ctx = get_time_context(current_hour)
+
+    style_notes = {
+        "ravi_gupta":        "Present ideas like they're obvious. Deadpan confidence. 'This is clearly the move. Here's why.'",
+        "abhishek_upmanyu":  "Rapid fire, brutally honest about viability. Call out which is actually good vs which sounds cool but dies in 3 months.",
+        "anubhav_bassi":     "'Maine bhi ek baar socha tha...' personal story setup, lands on practical advice.",
+        "madhur_virli":      "Dark realism. These are the ideas most likely to actually make money. No fairytales.",
+        "kaustubh_aggarwal": "Casual, like telling a friend at a dhaba. 'Yaar sun, ye kar. Seriously.'",
+        "ashish_solanki":    "Frame it in terms of what their family would understand vs what's actually interesting. Warm but practical.",
+        "samay_raina":       "Treat each idea like a chess opening. What's the strategy, the traps, the endgame.",
+    }
+    style = style_notes.get(comic, style_notes["abhishek_upmanyu"])
+
+    return f"""You are a sharp startup advisor helping someone figure out what to build.
+
+Their skills: {skills}
+Their interests: {interests}
+Time context: {time_ctx}
+Style: {style}
+
+Generate exactly 3 startup or project ideas tailored specifically to their skills and interests.
+Not generic — ideas that make sense FOR THIS PERSON given what they know and care about.
+
+Respond in exactly this format:
+
+[CREATED]
+
+IDEA 1: [Name]
+What: One sentence on what it is.
+Why you: Why their skills + interests make them the right person to build this.
+Viability: Honest 1-line assessment — real business, portfolio project, or long shot?
+
+IDEA 2: [Name]
+What: ...
+Why you: ...
+Viability: ...
+
+IDEA 3: [Name]
+What: ...
+Why you: ...
+Viability: ...
+
+One safe, one ambitious, one unexpected.
+{PEER_TONE_NOTE}"""
+
+
+def get_stack_create_prompt(comic, level, interests, current_hour=None):
+    if current_hour is None:
+        current_hour = get_ist_hour()
+    time_ctx = get_time_context(current_hour)
+
+    style_notes = {
+        "ravi_gupta":        "Deadpan confidence. 'This is what you build. This is the stack. Here's why. Done.'",
+        "abhishek_upmanyu":  "Rapid fire, slightly exasperated they don't know what to build, but genuinely helpful. 'Yaar ye kar, seriously.'",
+        "anubhav_bassi":     "'Maine bhi ek baar socha tha kya banau...' personal story setup, lands on practical advice.",
+        "madhur_virli":      "Brutally practical. Pick the project that actually looks good on a resume and isn't tutorial-level.",
+        "kaustubh_aggarwal": "Friend at a dhaba giving unsolicited but correct career advice.",
+        "ashish_solanki":    "'Kya cheez hai jo tujhe aur apne ghar walon ko useful lagegi'. Warm but practical.",
+        "samay_raina":       "'Okay yaar let's analyse the position.' Treats project selection like a chess opening choice.",
+    }
+    style = style_notes.get(comic, style_notes["abhishek_upmanyu"])
+
+    return f"""You are an opinionated senior developer helping someone who doesn't know what to build next.
+
+Their experience level: {level}
+Their interests: {interests}
+Time context: {time_ctx}
+Style: {style}
+
+Suggest ONE specific project idea that fits their level and interests. Then give the full stack and how to start.
+
+Respond in exactly this format:
+
+[CREATED]
+
+BUILD THIS: [Project Name]
+What it is: One punchy sentence.
+Why it's good for you: Why this fits their level and makes sense for their background.
+
+YOUR STACK:
+FRONTEND: ...
+BACKEND: ...
+DATABASE: ...
+HOSTING: ...
+
+HOW TO START:
+1. [First concrete step specific to this project]
+2. [Second step]
+3. [Third step]
+
+WHY THIS STACK: One honest sentence on why this stack for this project at this level.
+
+{PEER_TONE_NOTE}"""
+
+
+def get_resume_create_prompt(comic, name, role, experience, projects, skills, education, current_hour=None):
+    if current_hour is None:
+        current_hour = get_ist_hour()
+    time_ctx = get_time_context(current_hour)
+
+    style_notes = {
+        "ravi_gupta":        "Most sensible, obvious version of this resume. No fluff, exactly what should be there.",
+        "abhishek_upmanyu":  "Fast, specific, zero corporate cringe. Every bullet should actually mean something.",
+        "anubhav_bassi":     "Grounded, human, specific. Sounds like a real person not a template.",
+        "madhur_virli":      "ATS-optimised, dark realism. What actually gets a callback, not what sounds impressive.",
+        "kaustubh_aggarwal": "Direct, no padding. Say the thing.",
+        "ashish_solanki":    "Warm but professional. Makes the person sound like someone you'd actually want to hire.",
+        "samay_raina":       "Clear structure, logical flow, every section earns its place.",
+    }
+    style = style_notes.get(comic, style_notes["abhishek_upmanyu"])
+
+    return f"""You are a professional resume writer who hates fluff. Write a clean, ATS-friendly, human-sounding resume.
+
+Name/Role: {name} — {role}
+Experience: {experience}
+Projects: {projects}
+Skills: {skills}
+Education: {education}
+
+Writing approach: {style}
+Time context: {time_ctx}
+
+Rules:
+- Every bullet starts with a strong action verb
+- Quantify everything possible — numbers, percentages, scale
+- No "responsible for", no "worked on", no vague filler
+- Skills section clean and scannable
+- 1 page worth of content
+- Real person, not a word cloud
+
+Respond in exactly this format:
+
+[CREATED]
+
+{name}
+{role} | email@example.com | linkedin.com/in/yourname | github.com/yourname
+
+SUMMARY
+2 sentences max. Who they are and what they bring. No "passionate about" or "seeking opportunities".
+
+EXPERIENCE
+[Company / Role — Date range]
+• [Action verb + what + result/scale]
+• [Action verb + what + result/scale]
+
+PROJECTS
+[Project Name] — [tech stack]
+• What it does in one line
+• Most impressive technical detail
+
+SKILLS
+Languages: ...
+Frameworks: ...
+Tools: ...
+
+EDUCATION
+{education}
+
+Make every line earn its place.
+{PEER_TONE_NOTE}"""
+
+
 COMIC_OPTIONS = [
     {"id": "ravi_gupta",        "name": "Ravi Gupta",         "vibe": "Deadpan Misdirection"},
     {"id": "abhishek_upmanyu",  "name": "Abhishek Upmanyu",   "vibe": "Rapid-Fire Wit"},

@@ -1478,6 +1478,50 @@
     .mode-btn.active { background: var(--resume); color: #fff; }
     .mode-btn:not(.active):hover { background: var(--border); color: var(--text-bright); }
 
+    /* CHECK / CREATE main tab switcher */
+    .tool-tabs {
+      display: flex;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border-bright);
+    }
+    .tool-tab {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      padding: 10px 22px;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: -1px;
+    }
+    .tool-tab:hover { color: var(--text); }
+    .tool-tab.active { color: var(--text-bright); border-bottom-color: currentColor; }
+    .modal-roaster .tool-tab.active { color: #0077b5; border-bottom-color: #0077b5; }
+    .modal-idea    .tool-tab.active { color: #ff6b6b; border-bottom-color: #ff6b6b; }
+    .modal-stack   .tool-tab.active { color: var(--accent2); border-bottom-color: var(--accent2); }
+    .modal-resume  .tool-tab.active { color: var(--resume); border-bottom-color: var(--resume); }
+
+    /* created output panel */
+    .created-panel {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border-bright);
+      border-left: 3px solid var(--accent2);
+      padding: 20px;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.8;
+      color: var(--text);
+      white-space: pre-wrap;
+    }
+    .modal-roaster .created-panel { border-left-color: #0077b5; }
+    .modal-idea    .created-panel { border-left-color: #ff6b6b; }
+    .modal-stack   .created-panel { border-left-color: var(--accent2); }
+    .modal-resume  .created-panel { border-left-color: var(--resume); }
+
     /* Input mode panels */
     .input-mode { display: none; }
     .input-mode.active { display: block; }
@@ -2462,34 +2506,55 @@
     <div class="modal modal-wide modal-roaster">
       <button class="modal-close" onclick="closeModal('roaster')">✕</button>
       <div class="modal-title">LINKEDIN REALITY CHECK</div>
-      <div class="modal-sub">// paste it. we'll tell you if it slaps or flops.</div>
+      <div class="modal-sub" id="li-modal-sub">// paste it. we'll tell you if it slaps or flops.</div>
       <div class="modal-columns">
         <!-- Left: Inputs -->
         <div class="modal-left">
-          <div class="mode-toggle">
-            <button class="mode-btn active" id="btn-li-post" onclick="switchLinkedInType('post')">Post</button>
-            <button class="mode-btn" id="btn-li-bio" onclick="switchLinkedInType('bio')">Bio</button>
-            <button class="mode-btn" id="btn-li-headline" onclick="switchLinkedInType('headline')">Headline</button>
-            <button class="mode-btn" id="btn-li-connect" onclick="switchLinkedInType('connection_request')">Connection Req</button>
+          <!-- CHECK / CREATE tab -->
+          <div class="tool-tabs">
+            <button class="tool-tab active" id="li-tab-check" onclick="switchLiMode('check')">⚡ CHECK</button>
+            <button class="tool-tab" id="li-tab-create" onclick="switchLiMode('create')">✦ CREATE</button>
           </div>
-          <div class="field">
-            <label id="linkedin-content-label">Your LinkedIn Post</label>
-            <textarea id="linkedin-content" placeholder="Paste your LinkedIn post here..." style="min-height: 140px;"></textarea>
+
+          <!-- CHECK mode inputs -->
+          <div class="input-mode active" id="li-mode-check">
+            <div class="mode-toggle">
+              <button class="mode-btn active" id="btn-li-post" onclick="switchLinkedInType('post')">Post</button>
+              <button class="mode-btn" id="btn-li-bio" onclick="switchLinkedInType('bio')">Bio</button>
+              <button class="mode-btn" id="btn-li-headline" onclick="switchLinkedInType('headline')">Headline</button>
+              <button class="mode-btn" id="btn-li-connect" onclick="switchLinkedInType('connection_request')">Connection Req</button>
+            </div>
+            <div class="field">
+              <label id="linkedin-content-label">Your LinkedIn Post</label>
+              <textarea id="linkedin-content" placeholder="Paste your LinkedIn post here..." style="min-height: 140px;"></textarea>
+            </div>
+            <input type="hidden" id="linkedin-type" value="post"/>
           </div>
-          <input type="hidden" id="linkedin-type" value="post"/>
+
+          <!-- CREATE mode inputs -->
+          <div class="input-mode" id="li-mode-create">
+            <div class="mode-toggle">
+              <button class="mode-btn active" id="btn-li-create-post" onclick="switchLinkedInCreateType('post')">Post</button>
+              <button class="mode-btn" id="btn-li-create-bio" onclick="switchLinkedInCreateType('bio')">Bio</button>
+              <button class="mode-btn" id="btn-li-create-headline" onclick="switchLinkedInCreateType('headline')">Headline</button>
+              <button class="mode-btn" id="btn-li-create-connect" onclick="switchLinkedInCreateType('connection_request')">Connection Req</button>
+            </div>
+            <input type="hidden" id="linkedin-create-type" value="post"/>
+            <div class="field">
+              <label id="li-intent-label">What do you want to say?</label>
+              <textarea id="linkedin-intent" placeholder="e.g. I want to share that I just launched my first SaaS product after 6 months of building it solo. Want to talk about what I learned." style="min-height: 140px;"></textarea>
+            </div>
+          </div>
+
           <div class="field">
             <label>Roast Style</label>
             <select id="roaster-comic">
-              <option value="abhishek_upmanyu">Abhishek Upmanyu — Rapid-Fire Wit</option>
-              <option value="samay_raina">Samay Raina — Gen-Z Chess Brain</option>
-              <option value="ravi_gupta">Ravi Gupta — Deadpan Misdirection</option>
-              <option value="anubhav_bassi">Anubhav Singh Bassi — Storytelling Failure</option>
-              <option value="ashish_solanki">Ashish Solanki — Family Roast</option>
-              <option value="kaustubh_aggarwal">Kaustubh Aggarwal — Delhi Savage</option>
-              <option value="madhur_virli">Madhur Virli — Dark IIT Cynicism</option>
+              {% for c in comic_options %}
+              <option value="{{ c.id }}">{{ c.name }} — {{ c.vibe }}</option>
+              {% endfor %}
             </select>
           </div>
-          <button class="submit-btn" onclick="submitLinkedIn()">CHECK IT 💼</button>
+          <button class="submit-btn" id="li-submit-btn" onclick="submitLinkedIn()">CHECK IT 💼</button>
         </div>
 
         <!-- Right: Output -->
@@ -2501,7 +2566,7 @@
               <div class="verdict-hint">Paste your LinkedIn content and hit Check It</div>
             </div>
             <div class="verdict-result" id="verdict-result" style="display:none">
-              <div class="result-label">// verdict</div>
+              <div class="result-label" id="li-result-label">// verdict</div>
               <div class="result-label" id="linkedin-verdict-label" style="font-size:11px;opacity:0.6;margin-bottom:6px;"></div>
               <div id="roaster-text"></div>
               <div id="linkedin-fixed-text" style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);"></div>
@@ -2522,15 +2587,41 @@
       <div class="modal-sub">// how original are you, really?</div>
       <div class="modal-columns">
         <div class="modal-left">
-          <div class="field">
-            <label>Your Idea</label>
-            <input type="text" id="idea-input" placeholder="e.g. An app that delivers repair services instantly"/>
+          <!-- CHECK / CREATE tab -->
+          <div class="tool-tabs">
+            <button class="tool-tab active" id="idea-tab-check" onclick="switchIdeaMode('check')">⚡ CHECK</button>
+            <button class="tool-tab" id="idea-tab-create" onclick="switchIdeaMode('create')">✦ CREATE</button>
           </div>
-          <div class="field">
-            <label>Target Market</label>
-            <input type="text" id="idea-market" placeholder="e.g. Indian urban millennials"/>
+
+          <!-- CHECK mode -->
+          <div class="input-mode active" id="idea-mode-check">
+            <div class="field">
+              <label>Your Idea</label>
+              <input type="text" id="idea-input" placeholder="e.g. An app that delivers repair services instantly"/>
+            </div>
+            <div class="field">
+              <label>Target Market</label>
+              <input type="text" id="idea-market" placeholder="e.g. Indian urban millennials"/>
+            </div>
           </div>
-          <button class="submit-btn" onclick="submitIdea()">CHECK MY IDEA 💡</button>
+
+          <!-- CREATE mode -->
+          <div class="input-mode" id="idea-mode-create">
+            <div class="field">
+              <label>Your Skills</label>
+              <input type="text" id="idea-skills" placeholder="e.g. Python, ML, frontend dev, content writing"/>
+            </div>
+            <div class="field">
+              <label>Your Interests</label>
+              <input type="text" id="idea-interests" placeholder="e.g. fintech, gaming, sustainability, education"/>
+            </div>
+            <div class="field">
+              <label>Background <span style="opacity:0.5;font-size:10px;">(optional)</span></label>
+              <input type="text" id="idea-background" placeholder="e.g. CS student, ex-banker, 2 years at startup"/>
+            </div>
+          </div>
+
+          <button class="submit-btn" id="idea-submit-btn" onclick="submitIdea()">CHECK MY IDEA 💡</button>
         </div>
         <div class="modal-right">
           <div class="verdict-panel">
@@ -2540,7 +2631,7 @@
               <div class="verdict-hint">Describe your idea and hit Check</div>
             </div>
             <div class="verdict-result" id="idea-verdict-result" style="display:none">
-              <div class="result-label">// the analysis</div>
+              <div class="result-label" id="idea-result-label">// the analysis</div>
               <div id="idea-text"></div>
               <div class="xp-toast" id="idea-xp"></div>
               <button class="share-btn" id="idea-share-btn" onclick="openSharePanel('idea')">⬡ SHARE RESULT</button>
@@ -2559,29 +2650,55 @@
       <div class="modal-sub">// no more analysis paralysis</div>
       <div class="modal-columns">
         <div class="modal-left">
-          <div class="field">
-            <label>What are you building?</label>
-            <input type="text" id="stack-project" placeholder="e.g. A social media app for pet owners"/>
+          <!-- CHECK / CREATE tab -->
+          <div class="tool-tabs">
+            <button class="tool-tab active" id="stack-tab-check" onclick="switchStackMode('check')">⚡ CHECK</button>
+            <button class="tool-tab" id="stack-tab-create" onclick="switchStackMode('create')">✦ CREATE</button>
           </div>
-          <div class="fields-row">
+
+          <!-- CHECK mode -->
+          <div class="input-mode active" id="stack-mode-check">
+            <div class="field">
+              <label>What are you building?</label>
+              <input type="text" id="stack-project" placeholder="e.g. A social media app for pet owners"/>
+            </div>
+            <div class="fields-row">
+              <div class="field">
+                <label>Your Experience Level</label>
+                <select id="stack-level">
+                  <option value="beginner">Beginner</option>
+                  <option value="intermediate">Intermediate</option>
+                  <option value="advanced">Advanced</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Priority</label>
+                <select id="stack-priority">
+                  <option value="speed">Ship Fast</option>
+                  <option value="scale">Scale Big</option>
+                  <option value="learn">Learn Most</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- CREATE mode -->
+          <div class="input-mode" id="stack-mode-create">
             <div class="field">
               <label>Your Experience Level</label>
-              <select id="stack-level">
+              <select id="stack-create-level">
                 <option value="beginner">Beginner</option>
                 <option value="intermediate">Intermediate</option>
                 <option value="advanced">Advanced</option>
               </select>
             </div>
             <div class="field">
-              <label>Priority</label>
-              <select id="stack-priority">
-                <option value="speed">Ship Fast</option>
-                <option value="scale">Scale Big</option>
-                <option value="learn">Learn Most</option>
-              </select>
+              <label>What are you into?</label>
+              <input type="text" id="stack-interests" placeholder="e.g. gaming, finance, health, education, AI"/>
             </div>
           </div>
-          <button class="submit-btn" onclick="submitStack()">PICK MY STACK ⚙️</button>
+
+          <button class="submit-btn" id="stack-submit-btn" onclick="submitStack()">PICK MY STACK ⚙️</button>
         </div>
         <div class="modal-right">
           <div class="verdict-panel">
@@ -2591,7 +2708,7 @@
               <div class="verdict-hint">Describe your project and hit Pick My Stack</div>
             </div>
             <div class="verdict-result" id="stack-verdict-result" style="display:none">
-              <div class="result-label">// your stack</div>
+              <div class="result-label" id="stack-result-label">// your stack</div>
               <div id="stack-text"></div>
               <div class="xp-toast" id="stack-xp"></div>
               <button class="share-btn" id="stack-share-btn" onclick="openSharePanel('stack')">⬡ SHARE RESULT</button>
@@ -2607,68 +2724,103 @@
     <div class="modal modal-wide modal-resume">
       <button class="modal-close" onclick="closeModal('resume')">✕</button>
       <div class="modal-title">RESUME ROASTER</div>
-      <div class="modal-sub">// we'll fix it. but we won't be nice about it.</div>
+      <div class="modal-sub" id="resume-modal-sub">// we'll fix it. but we won't be nice about it.</div>
       <div class="modal-columns">
         <!-- Left: Inputs -->
         <div class="modal-left">
-          <div class="mode-toggle">
-            <button class="mode-btn active" id="btn-paste" onclick="switchResumeMode('paste')">Paste Resume</button>
-            <button class="mode-btn" id="btn-form" onclick="switchResumeMode('form')">Fill Form</button>
+          <!-- CHECK / CREATE main tab -->
+          <div class="tool-tabs">
+            <button class="tool-tab active" id="resume-tab-check" onclick="switchResumeMainMode('check')">⚡ CHECK</button>
+            <button class="tool-tab" id="resume-tab-create" onclick="switchResumeMainMode('create')">✦ CREATE</button>
           </div>
 
-          <!-- Paste mode -->
-          <div class="input-mode active" id="resume-mode-paste">
-            <div class="field">
-              <label>Your Resume Text</label>
-              <textarea id="resume-text" placeholder="Paste your full resume here — skills, experience, education, the works..."></textarea>
+          <!-- CHECK mode -->
+          <div class="input-mode active" id="resume-main-check">
+            <div class="mode-toggle">
+              <button class="mode-btn active" id="btn-paste" onclick="switchResumeMode('paste')">Paste Resume</button>
+              <button class="mode-btn" id="btn-form" onclick="switchResumeMode('form')">Fill Form</button>
+            </div>
+            <!-- Paste mode -->
+            <div class="input-mode active" id="resume-mode-paste">
+              <div class="field">
+                <label>Your Resume Text</label>
+                <textarea id="resume-text" placeholder="Paste your full resume here — skills, experience, education, the works..."></textarea>
+              </div>
+            </div>
+            <!-- Form mode -->
+            <div class="input-mode" id="resume-mode-form">
+              <div class="fields-row">
+                <div class="field">
+                  <label>Full Name</label>
+                  <input type="text" id="form-name" placeholder="e.g. Pushkar Gupta"/>
+                </div>
+                <div class="field">
+                  <label>Target Role</label>
+                  <input type="text" id="form-role" placeholder="e.g. Backend Developer"/>
+                </div>
+              </div>
+              <div class="field">
+                <label>Work Experience</label>
+                <textarea id="form-experience" placeholder="e.g. 6 month internship at XYZ, built a Flask API..." style="min-height: 70px;"></textarea>
+              </div>
+              <div class="field">
+                <label>Projects</label>
+                <textarea id="form-projects" placeholder="e.g. ANVIL — AI tool platform with Groq, Flask, Supabase." style="min-height: 70px;"></textarea>
+              </div>
+              <div class="fields-row">
+                <div class="field">
+                  <label>Skills</label>
+                  <input type="text" id="form-skills" placeholder="e.g. Python, Flask, SQL"/>
+                </div>
+                <div class="field">
+                  <label>Education</label>
+                  <input type="text" id="form-education" placeholder="e.g. B.Tech CSE, PTU"/>
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- Form mode -->
-          <div class="input-mode" id="resume-mode-form">
+          <!-- CREATE mode — generates a full resume from scratch -->
+          <div class="input-mode" id="resume-main-create">
             <div class="fields-row">
               <div class="field">
                 <label>Full Name</label>
-                <input type="text" id="form-name" placeholder="e.g. Pushkar Gupta"/>
+                <input type="text" id="create-name" placeholder="e.g. Pushkar Gupta"/>
               </div>
               <div class="field">
                 <label>Target Role</label>
-                <input type="text" id="form-role" placeholder="e.g. Backend Developer"/>
+                <input type="text" id="create-role" placeholder="e.g. Backend Developer"/>
               </div>
             </div>
             <div class="field">
-              <label>Work Experience</label>
-              <textarea id="form-experience" placeholder="e.g. 6 month internship at XYZ, built a Flask API..." style="min-height: 70px;"></textarea>
+              <label>Work Experience <span style="opacity:0.5;font-size:10px;">(rough notes ok)</span></label>
+              <textarea id="create-experience" placeholder="e.g. 6 month internship at a logistics startup, worked on their API and dashboard" style="min-height: 65px;"></textarea>
             </div>
             <div class="field">
               <label>Projects</label>
-              <textarea id="form-projects" placeholder="e.g. ANVIL — AI tool platform with Groq, Flask, Supabase. Live at anvilapp.onrender.com" style="min-height: 70px;"></textarea>
+              <textarea id="create-projects" placeholder="e.g. ANVIL — AI satire platform, live on Render. Built with Flask, Groq, Supabase." style="min-height: 65px;"></textarea>
             </div>
             <div class="fields-row">
               <div class="field">
                 <label>Skills</label>
-                <input type="text" id="form-skills" placeholder="e.g. Python, Flask, SQL"/>
+                <input type="text" id="create-skills" placeholder="e.g. Python, React, AWS"/>
               </div>
               <div class="field">
                 <label>Education</label>
-                <input type="text" id="form-education" placeholder="e.g. B.Tech CSE, PTU"/>
+                <input type="text" id="create-education" placeholder="e.g. B.Tech CSE, PTU, 2025"/>
               </div>
             </div>
           </div>
 
           <div class="field">
-            <label>Roast Style</label>
+            <label>Style</label>
             <select id="resume-comic">
-              <option value="abhishek_upmanyu">Abhishek Upmanyu — Rapid-Fire Wit</option>
-              <option value="samay_raina">Samay Raina — Gen-Z Chess Brain</option>
-              <option value="ravi_gupta">Ravi Gupta — Deadpan Misdirection</option>
-              <option value="anubhav_bassi">Anubhav Singh Bassi — Storytelling Failure</option>
-              <option value="ashish_solanki">Ashish Solanki — Family Roast</option>
-              <option value="kaustubh_aggarwal">Kaustubh Aggarwal — Delhi Savage</option>
-              <option value="madhur_virli">Madhur Virli — Dark IIT Cynicism</option>
+              {% for c in comic_options %}
+              <option value="{{ c.id }}">{{ c.name }} — {{ c.vibe }}</option>
+              {% endfor %}
             </select>
           </div>
-          <button class="submit-btn" onclick="submitResume(this)">ROAST MY RESUME 📄</button>
+          <button class="submit-btn" id="resume-submit-btn" onclick="submitResume(this)">ROAST MY RESUME 📄</button>
         </div>
 
         <!-- Right: Output -->
@@ -2680,12 +2832,12 @@
               <div class="verdict-hint">Paste or fill your details and hit Roast</div>
             </div>
             <div class="verdict-split" id="resume-verdict-result" style="display:none;">
-              <div class="verdict-half roast-half">
+              <div class="verdict-half roast-half" id="resume-roast-section">
                 <div class="verdict-half-label roast-label">// the roast</div>
                 <div class="verdict-half-text" id="resume-roast-text"></div>
               </div>
               <div class="verdict-half fix-half">
-                <div class="verdict-half-label fix-label">// fixed version</div>
+                <div class="verdict-half-label fix-label" id="resume-fixed-label">// fixed version</div>
                 <div class="verdict-half-text" id="resume-fixed-text"></div>
               </div>
               <div class="verdict-half" id="resume-why-section" style="display:none;">
@@ -3423,73 +3575,241 @@
       if (activeEl) activeEl.classList.add('active');
     }
 
+    // ── LINKEDIN ──
+    let liMode = 'check'; // 'check' | 'create'
+    let liCreateType = 'post';
+
+    function switchLiMode(mode) {
+      liMode = mode;
+      document.getElementById('li-mode-check').classList.toggle('active', mode === 'check');
+      document.getElementById('li-mode-create').classList.toggle('active', mode === 'create');
+      document.getElementById('li-tab-check').classList.toggle('active', mode === 'check');
+      document.getElementById('li-tab-create').classList.toggle('active', mode === 'create');
+      const sub = document.getElementById('li-modal-sub');
+      const btn = document.getElementById('li-submit-btn');
+      if (mode === 'create') {
+        sub.innerText = '// tell us what you want to say. we\'ll write it.';
+        btn.innerText = 'WRITE IT 💼';
+        btn.dataset.label = 'WRITE IT 💼';
+      } else {
+        sub.innerText = '// paste it. we\'ll tell you if it slaps or flops.';
+        btn.innerText = 'CHECK IT 💼';
+        btn.dataset.label = 'CHECK IT 💼';
+      }
+    }
+
+    function switchLinkedInCreateType(type) {
+      document.getElementById('linkedin-create-type').value = type;
+      ['post','bio','headline','connect'].forEach(t => {
+        const id = `btn-li-create-${t}`;
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle('active', t === type || (type === 'connection_request' && t === 'connect'));
+      });
+      const labels = {
+        post: 'What do you want to say?',
+        bio: 'Tell us about yourself',
+        headline: 'What do you do?',
+        connection_request: 'Why are you reaching out?'
+      };
+      const placeholders = {
+        post: 'e.g. I just shipped my first open source project, want to share it without sounding like a corporate drone...',
+        bio: 'e.g. CSE student at PTU, building ANVIL — an AI roast platform. Interested in backend and developer tools...',
+        headline: 'e.g. Backend dev, building with Flask and Groq. Open to internships.',
+        connection_request: 'e.g. I want to reach out to a startup founder whose YC application video I watched — want to ask about their early days.'
+      };
+      document.getElementById('li-intent-label').innerText = labels[type] || labels['post'];
+      document.getElementById('linkedin-intent').placeholder = placeholders[type] || placeholders['post'];
+    }
+
     async function submitLinkedIn() {
-      const btn = document.querySelector('#modal-roaster .submit-btn');
-      btn.dataset.label = 'CHECK IT 💼';
-      const content = document.getElementById('linkedin-content').value.trim();
-      const content_type = document.getElementById('linkedin-type').value;
+      const btn = document.getElementById('li-submit-btn');
       const comic = document.getElementById('roaster-comic').value;
-      if (!content) return alert('Paste your LinkedIn content first!');
       setLoading(btn, true);
-      const data = await callAPI('/api/linkedin', { content, content_type, comic });
+
+      let data;
+      if (liMode === 'create') {
+        const intent = document.getElementById('linkedin-intent').value.trim();
+        if (!intent) { setLoading(btn, false); return alert('Tell us what you want to say first!'); }
+        const content_type = document.getElementById('linkedin-create-type').value;
+        data = await callAPI('/api/linkedin', { mode: 'create', intent, content_type, comic });
+      } else {
+        const content = document.getElementById('linkedin-content').value.trim();
+        const content_type = document.getElementById('linkedin-type').value;
+        if (!content) { setLoading(btn, false); return alert('Paste your LinkedIn content first!'); }
+        data = await callAPI('/api/linkedin', { mode: 'check', content, content_type, comic });
+      }
+
       setLoading(btn, false);
       document.getElementById('verdict-waiting').style.display = 'none';
       document.getElementById('verdict-result').style.display = 'block';
 
-      // Parse [VERDICT] and [FIXED] sections
       const raw = data.message || '';
-      const verdictMatch = raw.match(/(?:\[VERDICT\]|#\s*VERDICT)([\s\S]*?)(?=(?:\[FIXED\]|#\s*FIXED)|$)/i);
-      const fixedMatch = raw.match(/(?:\[FIXED\]|#\s*FIXED)([\s\S]*?)$/i);
-      const verdictText = verdictMatch ? verdictMatch[1].trim() : raw;
-      const fixedText = fixedMatch ? fixedMatch[1].trim() : '';
 
-      document.getElementById('roaster-text').innerText = verdictText;
-      if (fixedText) {
-        document.getElementById('linkedin-fixed-text').innerText = fixedText;
-        document.getElementById('linkedin-verdict-label').innerText = '// fixed version ↓';
+      if (liMode === 'create') {
+        const createdMatch = raw.match(/(?:\[CREATED\])([\s\S]*?)$/i);
+        const createdText = createdMatch ? createdMatch[1].trim() : raw;
+        document.getElementById('roaster-text').innerText = createdText;
+        document.getElementById('linkedin-verdict-label').innerText = '// ready to copy and paste ↑';
+        document.getElementById('linkedin-fixed-text').innerText = '';
+      } else {
+        const verdictMatch = raw.match(/(?:\[VERDICT\]|#\s*VERDICT)([\s\S]*?)(?=(?:\[FIXED\]|#\s*FIXED)|$)/i);
+        const fixedMatch = raw.match(/(?:\[FIXED\]|#\s*FIXED)([\s\S]*?)$/i);
+        document.getElementById('roaster-text').innerText = verdictMatch ? verdictMatch[1].trim() : raw;
+        const fixedText = fixedMatch ? fixedMatch[1].trim() : '';
+        if (fixedText) {
+          document.getElementById('linkedin-fixed-text').innerText = fixedText;
+          document.getElementById('linkedin-verdict-label').innerText = '// fixed version ↓';
+        }
       }
+
       const earned = addXP(25);
       document.getElementById('roaster-xp').innerText = `+${earned} XP earned!`;
       showXPFloat(earned, btn);
       document.getElementById('roaster-share-btn').classList.add('visible');
     }
 
+    // ── IDEA ──
+    let ideaMode = 'check';
+
+    function switchIdeaMode(mode) {
+      ideaMode = mode;
+      document.getElementById('idea-mode-check').classList.toggle('active', mode === 'check');
+      document.getElementById('idea-mode-create').classList.toggle('active', mode === 'create');
+      document.getElementById('idea-tab-check').classList.toggle('active', mode === 'check');
+      document.getElementById('idea-tab-create').classList.toggle('active', mode === 'create');
+      const btn = document.getElementById('idea-submit-btn');
+      if (mode === 'create') {
+        btn.innerText = 'GENERATE IDEAS 💡';
+        btn.dataset.label = 'GENERATE IDEAS 💡';
+      } else {
+        btn.innerText = 'CHECK MY IDEA 💡';
+        btn.dataset.label = 'CHECK MY IDEA 💡';
+      }
+    }
+
     async function submitIdea() {
-      const btn = document.querySelector('#modal-idea .submit-btn');
-      btn.dataset.label = 'CHECK MY IDEA 💡';
-      const idea = document.getElementById('idea-input').value;
-      const market = document.getElementById('idea-market').value;
-      if (!idea || !market) return alert('Fill in all fields!');
+      const btn = document.getElementById('idea-submit-btn');
+      const comic = document.getElementById('roaster-comic') ? document.getElementById('roaster-comic').value : 'abhishek_upmanyu';
       setLoading(btn, true);
-      const data = await callAPI('/api/idea', { idea, market });
+
+      let data;
+      if (ideaMode === 'create') {
+        const skills = document.getElementById('idea-skills').value.trim();
+        const interests = document.getElementById('idea-interests').value.trim();
+        if (!skills || !interests) { setLoading(btn, false); return alert('Fill in your skills and interests!'); }
+        data = await callAPI('/api/idea', { mode: 'create', skills, interests, comic });
+      } else {
+        const idea = document.getElementById('idea-input').value;
+        const market = document.getElementById('idea-market').value;
+        if (!idea || !market) { setLoading(btn, false); return alert('Fill in all fields!'); }
+        data = await callAPI('/api/idea', { mode: 'check', idea, market, comic });
+      }
+
       setLoading(btn, false);
       document.getElementById('idea-verdict-waiting').style.display = 'none';
       document.getElementById('idea-verdict-result').style.display = 'block';
-      document.getElementById('idea-text').innerText = data.message;
-      const earned = addXP(35); // Idea Checker
+
+      const raw = data.message || '';
+      if (ideaMode === 'create') {
+        const match = raw.match(/(?:\[CREATED\])([\s\S]*?)$/i);
+        document.getElementById('idea-text').innerText = match ? match[1].trim() : raw;
+      } else {
+        document.getElementById('idea-text').innerText = raw;
+      }
+
+      const earned = addXP(30);
       document.getElementById('idea-xp').innerText = `+${earned} XP earned!`;
+      showXPFloat(earned, btn);
       document.getElementById('idea-share-btn').classList.add('visible');
     }
 
+    // ── STACK ──
+    let stackMode = 'check';
+
+    function switchStackMode(mode) {
+      stackMode = mode;
+      document.getElementById('stack-mode-check').classList.toggle('active', mode === 'check');
+      document.getElementById('stack-mode-create').classList.toggle('active', mode === 'create');
+      document.getElementById('stack-tab-check').classList.toggle('active', mode === 'check');
+      document.getElementById('stack-tab-create').classList.toggle('active', mode === 'create');
+      const btn = document.getElementById('stack-submit-btn');
+      if (mode === 'create') {
+        btn.innerText = 'SUGGEST A PROJECT ⚙️';
+        btn.dataset.label = 'SUGGEST A PROJECT ⚙️';
+      } else {
+        btn.innerText = 'PICK MY STACK ⚙️';
+        btn.dataset.label = 'PICK MY STACK ⚙️';
+      }
+    }
+      }
+    }
+
     async function submitStack() {
-      const btn = document.querySelector('#modal-stack .submit-btn');
-      btn.dataset.label = 'PICK MY STACK ⚙️';
-      const project = document.getElementById('stack-project').value;
-      const level = document.getElementById('stack-level').value;
-      const priority = document.getElementById('stack-priority').value;
-      if (!project) return alert('Describe your project!');
+      const btn = document.getElementById('stack-submit-btn');
+      const comic = document.getElementById('roaster-comic') ? document.getElementById('roaster-comic').value : 'abhishek_upmanyu';
       setLoading(btn, true);
-      const data = await callAPI('/api/stack', { project, level, priority });
+
+      let data;
+      if (stackMode === 'create') {
+        const level = document.getElementById('stack-create-level').value;
+        const interests = document.getElementById('stack-interests').value.trim();
+        if (!interests) { setLoading(btn, false); return alert('Tell us what interests you!'); }
+        data = await callAPI('/api/stack', { mode: 'create', level, interests, comic });
+      } else {
+        const project = document.getElementById('stack-project').value;
+        const level = document.getElementById('stack-level').value;
+        const priority = document.getElementById('stack-priority').value;
+        if (!project) { setLoading(btn, false); return alert('Describe your project!'); }
+        data = await callAPI('/api/stack', { mode: 'check', project, level, priority, comic });
+      }
+
       setLoading(btn, false);
       document.getElementById('stack-verdict-waiting').style.display = 'none';
       document.getElementById('stack-verdict-result').style.display = 'block';
-      document.getElementById('stack-text').innerText = data.message;
-      const earned = addXP(30); // Stack Picker
+
+      const raw = data.message || '';
+      if (stackMode === 'create') {
+        const match = raw.match(/(?:\[CREATED\])([\s\S]*?)$/i);
+        document.getElementById('stack-text').innerText = match ? match[1].trim() : raw;
+      } else {
+        document.getElementById('stack-text').innerText = raw;
+      }
+
+      const earned = addXP(20);
       document.getElementById('stack-xp').innerText = `+${earned} XP earned!`;
+      showXPFloat(earned, btn);
       document.getElementById('stack-share-btn').classList.add('visible');
     }
 
+    // ── RESUME ──
+    let resumeCurrentMode = 'paste';
+    let resumeMainTab = 'check'; // 'check' | 'create'
+
+    function switchResumeMainMode(tab) {
+      resumeMainTab = tab;
+      document.getElementById('resume-main-check').classList.toggle('active', tab === 'check');
+      document.getElementById('resume-main-create').classList.toggle('active', tab === 'create');
+      document.getElementById('resume-tab-check').classList.toggle('active', tab === 'check');
+      document.getElementById('resume-tab-create').classList.toggle('active', tab === 'create');
+      const btn = document.getElementById('resume-submit-btn');
+      const sub = document.getElementById('resume-modal-sub');
+      if (tab === 'create') {
+        resumeCurrentMode = 'create';
+        btn.innerText = 'BUILD MY RESUME 📄';
+        btn.dataset.label = 'BUILD MY RESUME 📄';
+        sub.innerText = '// tell us who you are. we\'ll write the resume.';
+      } else {
+        resumeCurrentMode = 'paste';
+        btn.innerText = 'ROAST MY RESUME 📄';
+        btn.dataset.label = 'ROAST MY RESUME 📄';
+        sub.innerText = '// we\'ll fix it. but we won\'t be nice about it.';
+        // restore sub-mode
+        switchResumeMode(resumeCurrentMode === 'create' ? 'paste' : resumeCurrentMode);
+      }
+    }
+
     function switchResumeMode(mode) {
+      resumeCurrentMode = mode;
       document.getElementById('resume-mode-paste').classList.toggle('active', mode === 'paste');
       document.getElementById('resume-mode-form').classList.toggle('active', mode === 'form');
       document.getElementById('btn-paste').classList.toggle('active', mode === 'paste');
@@ -3497,15 +3817,26 @@
     }
 
     async function submitResume(btn) {
-      const isPaste = document.getElementById('resume-mode-paste').classList.contains('active');
       const comic = document.getElementById('resume-comic').value;
-      let body = { comic, mode: isPaste ? 'paste' : 'form' };
+      let body = { comic };
 
-      if (isPaste) {
+      if (resumeMainTab === 'create') {
+        body.mode = 'create';
+        const name = document.getElementById('create-name').value.trim();
+        if (!name) return alert('Fill in at least your name!');
+        body.name = name;
+        body.role = document.getElementById('create-role').value;
+        body.experience = document.getElementById('create-experience').value;
+        body.projects = document.getElementById('create-projects').value;
+        body.skills = document.getElementById('create-skills').value;
+        body.education = document.getElementById('create-education').value;
+      } else if (resumeCurrentMode === 'paste') {
+        body.mode = 'paste';
         const text = document.getElementById('resume-text').value.trim();
         if (!text) return alert('Paste your resume first!');
         body.resume_text = text;
       } else {
+        body.mode = 'form';
         const name = document.getElementById('form-name').value.trim();
         if (!name) return alert('Fill in at least your name!');
         body.name = name;
@@ -3516,29 +3847,39 @@
         body.education = document.getElementById('form-education').value;
       }
 
-      btn.dataset.label = 'ROAST MY RESUME 📄';
+      btn.dataset.label = btn.innerText;
       setLoading(btn, true);
       const data = await callAPI('/api/resume', body);
       setLoading(btn, false);
 
-      // Parse [ROAST], [FIXED], [WHY] sections from response
       const raw = data.message || '';
-      const roastMatch = raw.match(/(?:\[ROAST\]|#\s*ROAST)([\s\S]*?)(?=(?:\[FIXED\]|#\s*FIXED|\[WHY\]|#\s*WHY)|$)/i);
-      const fixedMatch = raw.match(/(?:\[FIXED\]|#\s*FIXED)([\s\S]*?)(?=(?:\[WHY\]|#\s*WHY)|$)/i);
-      const whyMatch = raw.match(/(?:\[WHY\]|#\s*WHY)([\s\S]*?)$/i);
-      const roastText = roastMatch ? roastMatch[1].trim() : raw;
-      const fixedText = fixedMatch ? fixedMatch[1].trim() : '(No fixed version returned — try again)';
-      const whyText = whyMatch ? whyMatch[1].trim() : '';
-
       document.getElementById('resume-verdict-waiting').style.display = 'none';
       document.getElementById('resume-verdict-result').style.display = 'flex';
-      document.getElementById('resume-roast-text').innerText = roastText;
-      document.getElementById('resume-fixed-text').innerText = fixedText;
-      if (whyText) {
-        document.getElementById('resume-why-text').innerText = whyText;
-        document.getElementById('resume-why-section').style.display = 'block';
+
+      if (resumeMainTab === 'create') {
+        const match = raw.match(/(?:\[CREATED\])([\s\S]*?)$/i);
+        const createdText = match ? match[1].trim() : raw;
+        document.getElementById('resume-roast-section').style.display = 'none';
+        document.getElementById('resume-fixed-label').innerText = '// your resume — ready to use';
+        document.getElementById('resume-fixed-text').innerText = createdText;
+        document.getElementById('resume-why-section').style.display = 'none';
+      } else {
+        document.getElementById('resume-roast-section').style.display = '';
+        document.getElementById('resume-fixed-label').innerText = '// fixed version';
+        const roastMatch = raw.match(/(?:\[ROAST\]|#\s*ROAST)([\s\S]*?)(?=(?:\[FIXED\]|#\s*FIXED|\[WHY\]|#\s*WHY)|$)/i);
+        const fixedMatch = raw.match(/(?:\[FIXED\]|#\s*FIXED)([\s\S]*?)(?=(?:\[WHY\]|#\s*WHY)|$)/i);
+        const whyMatch = raw.match(/(?:\[WHY\]|#\s*WHY)([\s\S]*?)$/i);
+        document.getElementById('resume-roast-text').innerText = roastMatch ? roastMatch[1].trim() : raw;
+        document.getElementById('resume-fixed-text').innerText = fixedMatch ? fixedMatch[1].trim() : '(no fix returned — try again)';
+        if (whyMatch && whyMatch[1].trim()) {
+          document.getElementById('resume-why-text').innerText = whyMatch[1].trim();
+          document.getElementById('resume-why-section').style.display = 'block';
+        } else {
+          document.getElementById('resume-why-section').style.display = 'none';
+        }
       }
-      const earned = addXP(35); // Resume Roaster
+
+      const earned = addXP(35);
       document.getElementById('resume-xp').innerText = `+${earned} XP earned!`;
       showXPFloat(earned, btn);
       document.getElementById('resume-share-btn').classList.add('visible');

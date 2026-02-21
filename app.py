@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, jsonify, redirect, session
 from groq import Groq
-from comics import get_resume_prompt, get_linkedin_prompt, get_garbage_prompt, is_garbage_input, COMIC_OPTIONS
+from comics import get_resume_prompt, get_linkedin_prompt, get_linkedin_create_prompt, get_idea_create_prompt, get_stack_create_prompt, get_resume_create_prompt, get_garbage_prompt, is_garbage_input, COMIC_OPTIONS
 from dotenv import load_dotenv
 from supabase import create_client, Client
 from datetime import datetime, timezone, timedelta
@@ -237,15 +237,23 @@ def leaderboard_personal():
 @app.route("/api/linkedin", methods=["POST"])
 def linkedin():
     data = request.json
-    content = data.get("content", "").strip()
-    content_type = data.get("content_type", "post")  # post, bio, connection_request, headline
+    mode = data.get("mode", "check")
+    content_type = data.get("content_type", "post")
     comic = data.get("comic", "abhishek_upmanyu")
 
-    garbage, g_reason = is_garbage_input(content)
-    if garbage:
-        return jsonify({"message": ask_groq(get_garbage_prompt(comic, "linkedin", content, g_reason))})
+    if mode == "create":
+        intent = data.get("intent", "").strip()
+        garbage, g_reason = is_garbage_input(intent)
+        if garbage:
+            return jsonify({"message": ask_groq(get_garbage_prompt(comic, "linkedin", intent, g_reason))})
+        prompt = get_linkedin_create_prompt(comic, content_type, intent)
+    else:
+        content = data.get("content", "").strip()
+        garbage, g_reason = is_garbage_input(content)
+        if garbage:
+            return jsonify({"message": ask_groq(get_garbage_prompt(comic, "linkedin", content, g_reason))})
+        prompt = get_linkedin_prompt(comic, content_type, content)
 
-    prompt = get_linkedin_prompt(comic, content_type, content)
     result = ask_groq(prompt)
     log_tool_use("linkedin")
     return jsonify({"message": result})
@@ -254,16 +262,25 @@ def linkedin():
 @app.route("/api/idea", methods=["POST"])
 def idea():
     data = request.json
-    idea_text = data.get("idea", "")
-    market_text = data.get("market", "")
+    mode = data.get("mode", "check")
     comic = data.get("comic", "abhishek_upmanyu")
 
-    for val, label in [(idea_text, "idea"), (market_text, "market")]:
-        garbage, g_reason = is_garbage_input(str(val))
-        if garbage:
-            return jsonify({"message": ask_groq(get_garbage_prompt(comic, "idea", val, g_reason))})
-
-    prompt = f"""You are a sharp startup analyst with a dark sense of humor.
+    if mode == "create":
+        skills = data.get("skills", "").strip()
+        interests = data.get("interests", "").strip()
+        for val, label in [(skills, "skills"), (interests, "interests")]:
+            garbage, g_reason = is_garbage_input(str(val))
+            if garbage:
+                return jsonify({"message": ask_groq(get_garbage_prompt(comic, "idea", val, g_reason))})
+        prompt = get_idea_create_prompt(comic, skills, interests)
+    else:
+        idea_text = data.get("idea", "")
+        market_text = data.get("market", "")
+        for val, label in [(idea_text, "idea"), (market_text, "market")]:
+            garbage, g_reason = is_garbage_input(str(val))
+            if garbage:
+                return jsonify({"message": ask_groq(get_garbage_prompt(comic, "idea", val, g_reason))})
+        prompt = f"""You are a sharp startup analyst with a dark sense of humor.
     Analyze this startup idea and tell the person:
     1. If it already exists (and name competitors)
     2. How original it actually is (score out of 10)
@@ -272,6 +289,7 @@ def idea():
     Idea: {idea_text}
     Target Market: {market_text}
     Keep it punchy, honest, and slightly brutal. 4-5 sentences max."""
+
     result = ask_groq(prompt)
     log_tool_use("idea")
     return jsonify({"message": result})
@@ -280,14 +298,22 @@ def idea():
 @app.route("/api/stack", methods=["POST"])
 def stack():
     data = request.json
-    project_text = data.get("project", "")
+    mode = data.get("mode", "check")
     comic = data.get("comic", "abhishek_upmanyu")
 
-    garbage, g_reason = is_garbage_input(str(project_text))
-    if garbage:
-        return jsonify({"message": ask_groq(get_garbage_prompt(comic, "stack", project_text, g_reason))})
-
-    prompt = f"""You are an opinionated senior developer who gives direct tech stack recommendations.
+    if mode == "create":
+        level = data.get("level", "beginner")
+        interests = data.get("interests", "").strip()
+        garbage, g_reason = is_garbage_input(str(interests))
+        if garbage:
+            return jsonify({"message": ask_groq(get_garbage_prompt(comic, "stack", interests, g_reason))})
+        prompt = get_stack_create_prompt(comic, level, interests)
+    else:
+        project_text = data.get("project", "")
+        garbage, g_reason = is_garbage_input(str(project_text))
+        if garbage:
+            return jsonify({"message": ask_groq(get_garbage_prompt(comic, "stack", project_text, g_reason))})
+        prompt = f"""You are an opinionated senior developer who gives direct tech stack recommendations.
     Recommend a tech stack for this project. Be specific and decisive - no wishy-washy answers.
     Project: {project_text}
     Developer Experience Level: {data.get("level")}
@@ -298,6 +324,7 @@ def stack():
     DATABASE: ...
     HOSTING: ...
     WHY: one punchy sentence explaining the choice."""
+
     result = ask_groq(prompt)
     log_tool_use("stack")
     return jsonify({"message": result})
@@ -309,10 +336,25 @@ def resume():
     mode = data.get("mode", "paste")
     comic = data.get("comic", "abhishek_upmanyu")
 
+    if mode == "create":
+        name = data.get("name", "").strip()
+        if not name:
+            return jsonify({"error": "Name is required"}), 400
+        result = ask_groq(get_resume_create_prompt(
+            comic,
+            name,
+            data.get("role", ""),
+            data.get("experience", ""),
+            data.get("projects", ""),
+            data.get("skills", ""),
+            data.get("education", "")
+        ))
+        log_tool_use("resume")
+        return jsonify({"message": result})
+
     if mode == "paste":
         resume_content = data.get("resume_text", "").strip()
     else:
-        # Build mode — construct resume from form fields
         name = data.get("name", "")
         role = data.get("role", "")
         experience = data.get("experience", "")
