@@ -1108,7 +1108,7 @@
       letter-spacing: 0.2em;
       text-transform: uppercase;
       color: var(--text-dim);
-      margin-bottom: 32px;
+      margin-bottom: 40px;
       display: flex;
       align-items: center;
       gap: 16px;
@@ -1121,132 +1121,133 @@
       background: var(--border);
     }
 
-    .tools-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
+    /* ── Diagonal cards ── */
+    .tools-diag {
+      display: flex;
+      flex-direction: column;
       gap: 2px;
     }
 
     .tool-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      padding: 40px 36px;
-      cursor: pointer;
-      transition: border-color 0.3s, background 0.3s, box-shadow 0.3s, transform 0.06s linear, opacity 0.06s linear;
       position: relative;
       overflow: hidden;
+      cursor: pointer;
+      height: 160px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.02);
+      transition: height 0.35s cubic-bezier(0.4,0,0.2,1), background 0.3s,
+                  transform 0.06s linear, opacity 0.06s linear;
+      display: flex;
+      align-items: stretch;
       will-change: transform, opacity;
     }
+    .tool-card:hover { height: 210px; background: rgba(255,255,255,0.035); }
 
-    
+    /* alternating offset */
+    .tool-card:nth-child(even) { margin-left: 72px; }
+    .tool-card:nth-child(odd)  { margin-right: 72px; }
 
+    /* diagonal clip on accent half */
+    .diag-left {
+      flex: 0 0 42%;
+      padding: 28px 32px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      z-index: 1;
+      clip-path: polygon(0 0, 100% 0, 88% 100%, 0 100%);
+      background: rgba(255,255,255,0.025);
+      transition: background 0.3s;
+    }
+    .tool-card:hover .diag-left { background: rgba(255,255,255,0.04); }
+
+    .diag-right {
+      flex: 1;
+      padding: 28px 28px 28px 44px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* accent slash wash on hover */
     .tool-card::before {
       content: '';
       position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 2px;
-      transform: scaleX(0);
-      transition: transform 0.35s ease;
-      transform-origin: left;
-    }
-
-    .tool-card::after {
-      content: '';
-      position: absolute;
-      inset: 0;
+      top: 0; bottom: 0; left: 0;
+      width: 42%;
+      background: var(--tc);
       opacity: 0;
+      clip-path: polygon(0 0, 100% 0, 88% 100%, 0 100%);
       transition: opacity 0.3s;
       pointer-events: none;
+      z-index: 0;
     }
+    .tool-card:hover::before { opacity: 0.07; }
 
-    .tool-card:hover::before { transform: scaleX(1); }
-    .tool-card:hover::after { opacity: 1; }
+    /* no ::after needed — clearing old ghost */
+    .tool-card::after { display: none; }
 
-    /* Roaster */
-    .card-roaster::before { background: var(--roaster); }
-    .card-roaster::after { background: radial-gradient(ellipse at top left, var(--roaster-glow), transparent 70%); }
-    .card-roaster:hover { border-color: rgba(0,119,181,0.4); box-shadow: 0 0 30px rgba(0,119,181,0.08); }
-    .card-roaster .tool-number { color: var(--border-bright); transition: color 0.2s; }
-    .card-roaster:hover .tool-number { color: var(--roaster); }
-    .card-roaster .tool-tag { color: var(--roaster); border-color: var(--roaster); }
-    .card-roaster .tool-xp { color: var(--roaster); }
-
-    /* Idea */
-    .card-idea::before { background: var(--idea); }
-    .card-idea::after { background: radial-gradient(ellipse at top left, var(--idea-glow), transparent 70%); }
-    .card-idea:hover { border-color: rgba(255,107,107,0.4); box-shadow: 0 0 30px rgba(255,107,107,0.08); }
-    .card-idea .tool-number { color: var(--border-bright); transition: color 0.2s; }
-    .card-idea:hover .tool-number { color: var(--idea); }
-    .card-idea .tool-tag { color: var(--idea); border-color: var(--idea); }
-    .card-idea .tool-xp { color: var(--idea); }
-
-    /* Stack */
-    .card-stack::before { background: var(--stack); }
-    .card-stack::after { background: radial-gradient(ellipse at top left, var(--stack-glow), transparent 70%); }
-    .card-stack:hover { border-color: rgba(0,230,118,0.4); box-shadow: 0 0 30px rgba(0,230,118,0.08); }
-    .card-stack .tool-number { color: var(--border-bright); transition: color 0.2s; }
-    .card-stack:hover .tool-number { color: var(--stack); }
-    .card-stack .tool-tag { color: var(--stack); border-color: var(--stack); }
-    .card-stack .tool-xp { color: var(--stack); }
-
-    /* Resume */
-    .card-resume::before { background: var(--resume); }
-    .card-resume::after { background: radial-gradient(ellipse at top left, var(--resume-glow), transparent 70%); }
-    .card-resume:hover { border-color: rgba(168,85,247,0.4); box-shadow: 0 0 30px rgba(168,85,247,0.08); }
-    .card-resume .tool-number { color: var(--border-bright); transition: color 0.2s; }
-    .card-resume:hover .tool-number { color: var(--resume); }
-    .card-resume .tool-tag { color: var(--resume); border-color: var(--resume); }
-    .card-resume .tool-xp { color: var(--resume); }
-
-    .tool-number {
+    .diag-num {
       font-family: var(--display);
-      font-size: 48px;
+      font-size: 64px;
+      color: var(--tc);
+      opacity: 0.18;
       line-height: 1;
-      margin-bottom: 24px;
-      position: relative;
-      z-index: 1;
+      transition: opacity 0.2s;
     }
+    .tool-card:hover .diag-num { opacity: 0.55; }
 
-    .tool-icon {
-      font-size: 28px;
-      margin-bottom: 16px;
-    }
+    .diag-icon { font-size: 22px; }
 
     .tool-name {
       font-family: var(--display);
-      font-size: 28px;
+      font-size: clamp(20px, 2.4vw, 30px);
+      letter-spacing: 0.04em;
       color: var(--text-bright);
-      letter-spacing: 0.03em;
-      margin-bottom: 12px;
+      line-height: 1.1;
+      margin-bottom: 8px;
+      transition: color 0.2s;
     }
+    .tool-card:hover .tool-name { color: var(--tc); }
 
     .tool-desc {
       font-size: 13px;
-      color: var(--text);
-      line-height: 1.7;
       font-weight: 300;
-      margin-bottom: 28px;
+      color: rgba(240,237,232,0.35);
+      line-height: 1.65;
+      max-width: 440px;
+      transition: color 0.2s;
+      margin-bottom: 0;
     }
+    .tool-card:hover .tool-desc { color: rgba(240,237,232,0.62); }
 
-    .tool-tag {
-      font-family: var(--mono);
-      font-size: 10px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      border: 1px solid;
-      padding: 4px 10px;
-      display: inline-block;
-      position: relative;
-      z-index: 1;
+    .diag-meta {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-top: 14px;
     }
-
     .tool-xp {
       font-family: var(--mono);
-      font-size: 10px;
-      margin-top: 12px;
+      font-size: 11px;
+      color: var(--tc);
+      opacity: 0.7;
+      letter-spacing: 0.08em;
+    }
+    .diag-modes { display: flex; gap: 6px; }
+    .tool-tag {
+      font-family: var(--mono);
+      font-size: 8px;
       letter-spacing: 0.1em;
-      position: relative;
-      z-index: 1;
+      text-transform: uppercase;
+      padding: 3px 9px;
+      border: 1px solid var(--tc);
+      color: var(--tc);
+      opacity: 0.65;
+      display: inline-block;
     }
 
     /* MODAL OVERLAY */
@@ -2100,18 +2101,30 @@
         padding: 0 16px 60px;
       }
 
-      /* Tools grid — single column */
-      .tools-grid { grid-template-columns: 1fr; gap: 2px; }
+      /* Diagonal — flatten on mobile */
       .tool-card {
         opacity: 1 !important;
         transform: none !important;
-        padding: 28px 20px;
+        height: auto !important;
+        flex-direction: column;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
       }
-      .tool-number { font-size: 36px; }
-      .tool-name { font-size: 22px; }
+      .diag-left {
+        clip-path: none;
+        flex: none;
+        padding: 20px 20px 12px;
+        flex-direction: row;
+        align-items: center;
+        gap: 14px;
+      }
+      .diag-num { font-size: 40px; }
+      .diag-right { padding: 12px 20px 22px; }
+      .tool-name { font-size: 20px; }
+      .tool-card::before { clip-path: none; width: 100%; height: 3px; bottom: auto; }
 
       /* Section label */
-      .section-label { font-size: 9px; margin-bottom: 20px; }
+      .section-label { font-size: 9px; margin-bottom: 24px; }
 
       /* Modal — slide up from bottom */
       .modal-overlay { padding: 0; align-items: flex-end; }
@@ -2163,7 +2176,7 @@
     /* Extra small */
     @media (max-width: 400px) {
       .hero h1 { font-size: 52px; }
-      .tool-card { padding: 22px 16px; }
+      .tool-card { height: auto !important; }
       .modal { padding: 20px 14px; }
     }
     /* LEADERBOARD MODAL */
@@ -2472,45 +2485,71 @@
   <!-- TOOLS -->
   <section class="tools-section" id="tools">
     <div class="section-label">Choose your weapon</div>
-    <div class="tools-grid">
+
+    <div class="tools-diag">
 
       <!-- LinkedIn Reality Check -->
-      <div class="tool-card card-roaster" onclick="openModal('roaster')">
-        <div class="tool-number">01</div>
-        <div class="tool-icon">💼</div>
-        <div class="tool-name">LINKEDIN REALITY CHECK</div>
-        <p class="tool-desc">Paste your LinkedIn post, bio, headline, or connection request. We'll tell you exactly what's cringe — and fix it.</p>
-        <span class="tool-tag">Check My Profile</span>
-        <div class="tool-xp">+25 XP per check</div>      </div>
-
-      <!-- Idea Checker -->
-      <div class="tool-card card-idea" onclick="openModal('idea')">
-        <div class="tool-number">02</div>
-        <div class="tool-icon">💡</div>
-        <div class="tool-name">IDEA CHECKER</div>
-        <p class="tool-desc">Think you've got a million dollar idea? Let's find out if someone already built it, and if yours is actually better.</p>
-        <span class="tool-tag">Validate</span>
-        <div class="tool-xp">+35 XP per check</div>
+      <div class="tool-card card-roaster" style="--tc:var(--roaster)" onclick="openModal('roaster')">
+        <div class="diag-left">
+          <div class="diag-num">01</div>
+          <div class="diag-icon">💼</div>
+        </div>
+        <div class="diag-right">
+          <div class="tool-name">LINKEDIN REALITY CHECK</div>
+          <p class="tool-desc">Your LinkedIn sounds like ChatGPT wrote it during a corporate crisis. We fix it — or write it from scratch.</p>
+          <div class="diag-meta">
+            <span class="tool-xp">+25 XP</span>
+            <div class="diag-modes"><span class="tool-tag">✓ Check</span><span class="tool-tag">+ Create</span></div>
+          </div>
+        </div>
       </div>
 
-      <!-- Tech Stack Picker -->
-      <div class="tool-card card-stack" onclick="openModal('stack')">
-        <div class="tool-number">03</div>
-        <div class="tool-icon">⚙️</div>
-        <div class="tool-name">STACK PICKER</div>
-        <p class="tool-desc">Answer a few questions about your project and we'll tell you exactly what tech to use — no more analysis paralysis.</p>
-        <span class="tool-tag">Pick My Stack</span>
-        <div class="tool-xp">+30 XP per pick</div>
+      <!-- Idea Checker -->
+      <div class="tool-card card-idea" style="--tc:var(--idea)" onclick="openModal('idea')">
+        <div class="diag-left">
+          <div class="diag-num">02</div>
+          <div class="diag-icon">💡</div>
+        </div>
+        <div class="diag-right">
+          <div class="tool-name">IDEA CHECKER</div>
+          <p class="tool-desc">Already built, pivoted, and failed twice. Let's find out — or generate 3 tailored ideas built around you.</p>
+          <div class="diag-meta">
+            <span class="tool-xp">+30 XP</span>
+            <div class="diag-modes"><span class="tool-tag">✓ Check</span><span class="tool-tag">+ Generate</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stack Picker -->
+      <div class="tool-card card-stack" style="--tc:var(--stack)" onclick="openModal('stack')">
+        <div class="diag-left">
+          <div class="diag-num">03</div>
+          <div class="diag-icon">⚙️</div>
+        </div>
+        <div class="diag-right">
+          <div class="tool-name">STACK PICKER</div>
+          <p class="tool-desc">One answer. No hedging. Stop arguing at 2am. Or tell us your interests — we'll find you something to build.</p>
+          <div class="diag-meta">
+            <span class="tool-xp">+20 XP</span>
+            <div class="diag-modes"><span class="tool-tag">✓ Decide</span><span class="tool-tag">+ Suggest</span></div>
+          </div>
+        </div>
       </div>
 
       <!-- Resume Roaster -->
-      <div class="tool-card card-resume" onclick="openModal('resume')">
-        <div class="tool-number">04</div>
-        <div class="tool-icon">📄</div>
-        <div class="tool-name">RESUME ROASTER</div>
-        <p class="tool-desc">Paste your resume or fill in your details. We'll fix your grammar, sharpen your bullets, and roast every mediocre line — in your favourite comic's style.</p>
-        <span class="tool-tag">Roast My CV</span>
-        <div class="tool-xp">+30 XP per roast</div>
+      <div class="tool-card card-resume" style="--tc:var(--resume)" onclick="openModal('resume')">
+        <div class="diag-left">
+          <div class="diag-num">04</div>
+          <div class="diag-icon">📄</div>
+        </div>
+        <div class="diag-right">
+          <div class="tool-name">RESUME ROASTER</div>
+          <p class="tool-desc">HR deleted it before the first bullet. Here's why — and the version they'll actually read. Or we build it clean.</p>
+          <div class="diag-meta">
+            <span class="tool-xp">+35 XP</span>
+            <div class="diag-modes"><span class="tool-tag">✓ Fix</span><span class="tool-tag">+ Build</span></div>
+          </div>
+        </div>
       </div>
 
     </div>
