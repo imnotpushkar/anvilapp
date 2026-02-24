@@ -5,6 +5,9 @@ from dotenv import load_dotenv
 from supabase import create_client, Client
 from datetime import datetime, timezone, timedelta
 import os
+import requests as http_requests
+from bs4 import BeautifulSoup
+import re
 
 load_dotenv()
 
@@ -234,6 +237,83 @@ def leaderboard_personal():
         return jsonify({"xp": 0, "streak": 0, "tools_used": 0, "rank": "—"}), 200
 
 
+LINKEDIN_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Connection": "keep-alive",
+    "Upgrade-Insecure-Requests": "1",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Cache-Control": "max-age=0",
+}
+
+
+def fetch_linkedin_profile(url):
+    """Attempt to fetch a public LinkedIn profile. Returns (text, error)."""
+    url = url.strip()
+    if not re.match(r'https?://(www\.)?linkedin\.com/in/[\w\-]+/?', url):
+        return None, "INVALID_URL"
+    try:
+        resp = http_requests.get(url, headers=LINKEDIN_HEADERS, timeout=10, allow_redirects=True)
+        if resp.status_code == 999:
+            return None, "BLOCKED"
+        if any(x in resp.url for x in ["authwall", "login", "checkpoint"]):
+            return None, "AUTHWALL"
+        if resp.status_code != 200:
+            return None, f"HTTP_{resp.status_code}"
+
+        soup = BeautifulSoup(resp.text, "html.parser")
+        sections = []
+
+        for prop in ["og:title", "og:description"]:
+            tag = soup.find("meta", {"property": prop})
+            if tag and tag.get("content"):
+                sections.append(tag["content"].strip())
+
+        desc = soup.find("meta", {"name": "description"})
+        if desc and desc.get("content"):
+            sections.append(desc["content"].strip())
+
+        h1 = soup.find("h1")
+        if h1:
+            sections.append(f"Name: {h1.get_text(strip=True)}")
+
+        main = soup.find("main") or soup.find("body")
+        if main:
+            for tag in main.find_all(["h2", "h3", "p", "li"]):
+                text = tag.get_text(strip=True)
+                if len(text) > 40:
+                    sections.append(text)
+
+        if len(sections) < 2:
+            return None, "INSUFFICIENT_DATA"
+
+        seen, unique = set(), []
+        for s in sections:
+            if s not in seen:
+                seen.add(s)
+                unique.append(s)
+
+        return "\n".join(unique[:40]), None
+
+    except http_requests.exceptions.Timeout:
+        return None, "TIMEOUT"
+    except Exception as e:
+        return None, f"ERROR:{str(e)}"
+
+
+@app.route("/api/test-linkedin-fetch", methods=["GET"])
+def test_linkedin_fetch():
+    """Debug route — hit once after deploy to verify Render IP can reach LinkedIn."""
+    extracted, error = fetch_linkedin_profile("https://www.linkedin.com/in/williamhgates/")
+    if error:
+        return jsonify({"success": False, "error": error})
+    return jsonify({"success": True, "preview": extracted[:1000]})
+
+
 @app.route("/api/linkedin", methods=["POST"])
 def linkedin():
     data = request.json
@@ -247,8 +327,32 @@ def linkedin():
         if garbage:
             return jsonify({"message": ask_groq(get_garbage_prompt(comic, "linkedin", intent, g_reason))})
         prompt = get_linkedin_create_prompt(comic, content_type, intent)
+
     else:
+        # Check if user submitted a URL or pasted text
+        url_input = data.get("profile_url", "").strip()
         content = data.get("content", "").strip()
+
+        if url_input:
+            # Attempt to fetch the profile from the URL
+            fetched, fetch_error = fetch_linkedin_profile(url_input)
+            if fetch_error:
+                # Map internal error codes to user-facing messages
+                error_messages = {
+                    "BLOCKED": "LinkedIn blocked the request from our server. Please paste your profile content manually instead.",
+                    "AUTHWALL": "This profile requires login to view. Please paste your profile content manually instead.",
+                    "TIMEOUT": "LinkedIn took too long to respond. Please paste your profile content manually instead.",
+                    "INSUFFICIENT_DATA": "Couldn't extract enough data from this profile — it may be private. Please paste your content manually instead.",
+                    "INVALID_URL": "That doesn't look like a valid LinkedIn profile URL. Try: https://linkedin.com/in/yourname",
+                }
+                msg = error_messages.get(fetch_error, "Couldn't fetch this profile. Please paste your content manually instead.")
+                return jsonify({"message": None, "fetch_error": msg})
+            content = fetched
+            content_type = "profile"  # treat fetched URL as full profile check
+
+        if not content:
+            return jsonify({"message": None, "fetch_error": "No content provided. Paste your LinkedIn content or enter a profile URL."})
+
         garbage, g_reason = is_garbage_input(content)
         if garbage:
             return jsonify({"message": ask_groq(get_garbage_prompt(comic, "linkedin", content, g_reason))})

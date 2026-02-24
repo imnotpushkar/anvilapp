@@ -2578,17 +2578,38 @@
 
           <!-- CHECK mode inputs -->
           <div class="input-mode active" id="li-mode-check">
-            <div class="mode-toggle">
-              <button class="mode-btn active" id="btn-li-post" onclick="switchLinkedInType('post')">Post</button>
-              <button class="mode-btn" id="btn-li-bio" onclick="switchLinkedInType('bio')">Bio</button>
-              <button class="mode-btn" id="btn-li-headline" onclick="switchLinkedInType('headline')">Headline</button>
-              <button class="mode-btn" id="btn-li-connect" onclick="switchLinkedInType('connection_request')">Connection Req</button>
+
+            <!-- URL vs Paste toggle -->
+            <div class="mode-toggle" style="margin-bottom: 14px;">
+              <button class="mode-btn active" id="btn-li-input-url" onclick="switchLiInputMode('url')">&#x1F517; Profile URL</button>
+              <button class="mode-btn" id="btn-li-input-paste" onclick="switchLiInputMode('paste')">&#x1F4CB; Paste Text</button>
             </div>
-            <div class="field">
-              <label id="linkedin-content-label">Your LinkedIn Post</label>
-              <textarea id="linkedin-content" placeholder="Paste your LinkedIn post here..." style="min-height: 140px;"></textarea>
+
+            <!-- URL input -->
+            <div id="li-url-panel">
+              <div class="field">
+                <label>LinkedIn Profile URL</label>
+                <input type="url" id="linkedin-profile-url" placeholder="https://linkedin.com/in/yourprofile" style="width:100%; padding: 10px 12px; background: var(--surface); border: 1px solid var(--border); color: var(--text-bright); font-family: var(--mono); font-size: 12px; outline: none;"/>
+              </div>
+              <div id="li-fetch-error" style="display:none; font-family: var(--mono); font-size: 11px; color: #ff6b6b; margin-top: 8px; padding: 10px 12px; border: 1px solid rgba(255,107,107,0.3); background: rgba(255,107,107,0.05); line-height: 1.6;"></div>
             </div>
+
+            <!-- Paste input (hidden by default) -->
+            <div id="li-paste-panel" style="display:none;">
+              <div class="mode-toggle">
+                <button class="mode-btn active" id="btn-li-post" onclick="switchLinkedInType('post')">Post</button>
+                <button class="mode-btn" id="btn-li-bio" onclick="switchLinkedInType('bio')">Bio</button>
+                <button class="mode-btn" id="btn-li-headline" onclick="switchLinkedInType('headline')">Headline</button>
+                <button class="mode-btn" id="btn-li-connect" onclick="switchLinkedInType('connection_request')">Connection Req</button>
+              </div>
+              <div class="field">
+                <label id="linkedin-content-label">Your LinkedIn Post</label>
+                <textarea id="linkedin-content" placeholder="Paste your LinkedIn post here..." style="min-height: 140px;"></textarea>
+              </div>
+            </div>
+
             <input type="hidden" id="linkedin-type" value="post"/>
+            <input type="hidden" id="li-input-mode" value="url"/>
           </div>
 
           <!-- CREATE mode inputs -->
@@ -3875,6 +3896,16 @@
       document.getElementById('linkedin-intent').placeholder = placeholders[type] || placeholders['post'];
     }
 
+    // switch between URL and paste input in LinkedIn check mode
+    function switchLiInputMode(mode) {
+      document.getElementById('li-input-mode').value = mode;
+      document.getElementById('li-url-panel').style.display = mode === 'url' ? 'block' : 'none';
+      document.getElementById('li-paste-panel').style.display = mode === 'paste' ? 'block' : 'none';
+      document.getElementById('btn-li-input-url').classList.toggle('active', mode === 'url');
+      document.getElementById('btn-li-input-paste').classList.toggle('active', mode === 'paste');
+      document.getElementById('li-fetch-error').style.display = 'none';
+    }
+
     async function submitLinkedIn() {
       const btn = document.getElementById('li-submit-btn');
       const comic = document.getElementById('roaster-comic').value;
@@ -3887,13 +3918,35 @@
         const content_type = document.getElementById('linkedin-create-type').value;
         data = await callAPI('/api/linkedin', { mode: 'create', intent, content_type, comic });
       } else {
-        const content = document.getElementById('linkedin-content').value.trim();
-        const content_type = document.getElementById('linkedin-type').value;
-        if (!content) { setLoading(btn, false); return alert('Paste your LinkedIn content first!'); }
-        data = await callAPI('/api/linkedin', { mode: 'check', content, content_type, comic });
+        const inputMode = document.getElementById('li-input-mode').value;
+
+        if (inputMode === 'url') {
+          const profile_url = document.getElementById('linkedin-profile-url').value.trim();
+          if (!profile_url) { setLoading(btn, false); return alert('Enter a LinkedIn profile URL first!'); }
+          // Show fetching state
+          btn.innerText = 'Fetching profile...';
+          data = await callAPI('/api/linkedin', { mode: 'check', profile_url, comic });
+
+          // Handle fetch errors from backend
+          if (data.fetch_error) {
+            setLoading(btn, false);
+            btn.innerText = 'CHECK IT 💼';
+            const errEl = document.getElementById('li-fetch-error');
+            errEl.style.display = 'block';
+            errEl.innerText = data.fetch_error + ' → Switch to "Paste Text" above.';
+            return;
+          }
+        } else {
+          const content = document.getElementById('linkedin-content').value.trim();
+          const content_type = document.getElementById('linkedin-type').value;
+          if (!content) { setLoading(btn, false); return alert('Paste your LinkedIn content first!'); }
+          data = await callAPI('/api/linkedin', { mode: 'check', content, content_type, comic });
+        }
       }
 
       setLoading(btn, false);
+      btn.innerText = 'CHECK IT 💼';
+      document.getElementById('li-fetch-error').style.display = 'none';
       document.getElementById('verdict-waiting').style.display = 'none';
       document.getElementById('verdict-result').style.display = 'block';
 

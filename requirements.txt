@@ -3,3 +3,5 @@ groq
 gunicorn
 python-dotenv
 supabase
+requests
+beautifulsoup4
