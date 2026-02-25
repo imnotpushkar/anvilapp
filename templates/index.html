@@ -4843,7 +4843,7 @@
 
     function renderPdfOutput(raw) {
       // Parse [SECTION:...][PRIORITY:...][ISSUE:...][WAS:...][NOW:...] blocks
-      const blockRegex = /\[SECTION:\s*([^\]]+)\]\s*\[PRIORITY:\s*([^\]]+)\]\s*\[ISSUE:\s*([^\]]+)\]\s*\[WAS:\s*([\s\S]*?)\]\s*\[NOW:\s*([\s\S]*?)\](?=\[SECTION:|$)/g;
+      const blockRegex = /\[SECTION:\s*([^\]]+)\]\s*\[PRIORITY:\s*([^\]]+)\]\s*\[ISSUE:\s*([^\]]+)\]\s*\[WAS:\s*([\s\S]*?)\]\s*\[NOW:\s*([\s\S]*?)\](?=\s*\[SECTION:|\s*$)/g;
       const issues = [];
       let match;
       while ((match = blockRegex.exec(raw)) !== null) {
