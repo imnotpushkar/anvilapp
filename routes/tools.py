@@ -19,6 +19,7 @@ from services.linkedin_service import LinkedInService
 from comics import (
     get_linkedin_prompt,
     get_linkedin_create_prompt,
+    get_linkedin_pdf_prompt,
     get_idea_create_prompt,
     get_stack_create_prompt,
     get_resume_prompt,
@@ -94,26 +95,25 @@ def linkedin():
     return jsonify({"message": result})
 
 
-# ── LinkedIn PDF (S13 — route ready, uncomment when pymupdf is in requirements) ──
+# ── LinkedIn PDF ───────────────────────────────────────────────────────────
 
-# @tools_bp.route("/linkedin-pdf", methods=["POST"])
-# def linkedin_pdf():
-#     comic = request.form.get("comic", "abhishek_upmanyu")
-#     mode  = request.form.get("mode", "analyse")   # analyse | rewrite
-#     file  = request.files.get("pdf")
-#
-#     if not file:
-#         return jsonify({"error": "No PDF uploaded"}), 400
-#
-#     text, extract_error = LinkedInService.extract_pdf_text(file.read())
-#     if extract_error:
-#         return jsonify({"error": extract_error}), 400
-#
-#     from comics import get_linkedin_pdf_prompt   # add to comics.py in S13
-#     prompt = get_linkedin_pdf_prompt(comic, text, mode)
-#     result = AIService.ask(prompt)
-#     DatabaseService.log_tool_use("linkedin_pdf")
-#     return jsonify({"message": result})
+@tools_bp.route("/linkedin-pdf", methods=["POST"])
+def linkedin_pdf():
+    comic = request.form.get("comic", "abhishek_upmanyu")
+    mode  = request.form.get("mode", "analyse")   # analyse | rewrite
+    file  = request.files.get("pdf")
+
+    if not file:
+        return jsonify({"error": "No PDF uploaded"}), 400
+
+    text, extract_error = LinkedInService.extract_pdf_text(file.read())
+    if extract_error:
+        return jsonify({"error": extract_error}), 400
+
+    prompt = get_linkedin_pdf_prompt(comic, text, mode)
+    result = AIService.ask(prompt)
+    DatabaseService.log_tool_use("linkedin_pdf")
+    return jsonify({"message": result})
 
 
 # ── Idea Checker ───────────────────────────────────────────────────────────

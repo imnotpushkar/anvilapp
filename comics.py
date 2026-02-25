@@ -649,6 +649,66 @@ The actual {goal} — ready to copy and paste. Nothing else. No preamble, no exp
 {LINKEDIN_ENGLISH_NOTE}"""
 
 
+def get_linkedin_pdf_prompt(comic, extracted_text, mode="analyse", current_hour=None):
+    """
+    Analyse a full LinkedIn profile extracted from PDF.
+    Returns structured [SECTION/PRIORITY/ISSUE/WAS/NOW] blocks — one per issue found.
+    Frontend parses these into diff cards grouped by priority.
+    mode: 'analyse' (default) — find all issues and rewrite them
+    """
+    if current_hour is None:
+        current_hour = get_ist_hour()
+    time_ctx = get_time_context(current_hour)
+    persona = COMIC_PERSONAS.get(comic, COMIC_PERSONAS["abhishek_upmanyu"])
+
+    return f"""{persona}
+
+Your task: Tear apart this person's LinkedIn profile PDF and give them a complete, section-by-section roast + rewrite.
+
+Time context: {time_ctx}
+
+Their full LinkedIn profile (extracted from PDF):
+{extracted_text}
+
+Go through every section that has a problem — Headline, About, Experience, Skills, Education, Certifications.
+For each issue you find, output one block in EXACTLY this format (no deviations):
+
+[SECTION: <section name>]
+[PRIORITY: <High | Medium | Low>]
+[ISSUE: <one punchy sentence in your authentic comic voice — the roast of this specific problem>]
+[WAS: <exact text from their profile that has the problem>]
+[NOW: <your rewritten version — clean, specific, human, no buzzwords>]
+
+PRIORITY rules — be honest, not brutal for the sake of it:
+- High: kills their credibility or loses them opportunities (bad headline, vague About, weak Experience bullets)
+- Medium: noticeable problem that a recruiter would clock (generic skills section, missing metrics, buzzword soup)
+- Low: polish issue — nice to fix but not urgent (minor phrasing, formatting quirks)
+
+ISSUE voice rules — this is where your persona lives:
+- The [ISSUE] line is your roast in character — use your real verbal tics, Hinglish where it fits
+- Keep it to ONE punchy sentence — the sting should be fast
+- The [ISSUE] is the commentary; the [WAS]/[NOW] is the work
+- Do NOT put the actual rewrite in [ISSUE] — save that for [NOW]
+
+[WAS] rules:
+- Quote the EXACT text from their profile that has the problem
+- If it's a missing section (e.g., no About), write: "Missing — section not present"
+- Keep it as verbatim as possible — don't clean it up
+
+[NOW] rules:
+- Write the actual rewrite — not tips, the real thing
+- Clean, specific, no buzzwords, no "passionate about", no "seeking opportunities"
+- Sounds like a real person with something worth saying
+- Match the section type: Experience bullets start with action verbs + metrics; headline is punchy + specific; About is first-person and human
+
+Find ALL issues worth fixing — don't stop at 3 or 4. A typical LinkedIn profile has 6-12 things wrong.
+Output them grouped by priority (all High first, then Medium, then Low).
+Nothing else in your response — no preamble, no summary, no sign-off. Just the blocks.
+
+{PEER_TONE_NOTE}
+{LINKEDIN_ENGLISH_NOTE}"""
+
+
 COMIC_OPTIONS = [
     {"id": "ravi_gupta",        "name": "Ravi Gupta",         "vibe": "Deadpan Misdirection"},
     {"id": "abhishek_upmanyu",  "name": "Abhishek Upmanyu",   "vibe": "Rapid-Fire Wit"},
