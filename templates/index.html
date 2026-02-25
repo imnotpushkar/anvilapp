@@ -2303,6 +2303,142 @@
     .q-chips { display: flex; flex-wrap: wrap; gap: 8px; }
     .q-chip { padding: 6px 14px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); font-family: var(--mono); font-size: 11px; cursor: pointer; border-radius: 2px; transition: all 0.15s; user-select: none; }
     .q-chip.selected { border-color: var(--accent2); color: var(--accent2); background: rgba(0,230,118,0.06); }
+    /* ── PDF TAB — file upload zone ── */
+    .pdf-drop-zone {
+      border: 1px dashed rgba(0,119,181,0.3);
+      background: var(--bg);
+      padding: 24px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+    }
+    .pdf-drop-zone:hover { border-color: var(--roaster); background: rgba(0,119,181,0.03); }
+    .pdf-drop-zone.dragover { border-color: var(--roaster); background: rgba(0,119,181,0.06); }
+    .pdf-drop-zone input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .pdf-drop-icon { font-size: 28px; margin-bottom: 10px; }
+    .pdf-drop-label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; }
+    .pdf-drop-hint { font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; color: var(--text-dim); opacity: 0.6; }
+    .pdf-file-chosen { display: none; margin-top: 12px; font-family: var(--mono); font-size: 11px; color: var(--roaster); letter-spacing: 0.08em; }
+    .pdf-how-to { margin-top: 14px; padding: 12px 16px; background: rgba(0,119,181,0.05); border: 1px solid rgba(0,119,181,0.15); border-left: 2px solid var(--roaster); }
+    .pdf-how-to-label { font-family: var(--mono); font-size: 8px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--roaster); margin-bottom: 6px; }
+    .pdf-how-to-text { font-family: var(--mono); font-size: 10px; color: var(--text-dim); line-height: 1.7; letter-spacing: 0.03em; }
+
+    /* ── PDF divider inside CHECK mode ── */
+    .li-pdf-divider {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 20px 0 14px;
+    }
+    .li-pdf-divider::before,
+    .li-pdf-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border-bright);
+    }
+    .li-pdf-divider-label {
+      font-family: var(--mono);
+      font-size: 8px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      white-space: nowrap;
+    }
+    .li-pdf-section {
+      background: rgba(0,119,181,0.025);
+      border: 1px solid rgba(0,119,181,0.12);
+      padding: 14px;
+    }
+
+    /* ── PDF spinner + quips ── */
+    .pdf-spinner-wrap { display: none; flex-direction: column; align-items: center; padding: 40px 20px; text-align: center; }
+    .pdf-spinner-wrap.visible { display: flex; }
+    .pdf-hex-spinner { position: relative; width: 72px; height: 72px; margin-bottom: 24px; }
+    .pdf-hex-svg { width: 72px; height: 72px; animation: pdfSpin 2s linear infinite; }
+    @keyframes pdfSpin { to { transform: rotate(360deg); } }
+    .pdf-hex-inner { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+    .pdf-hex-logo { font-family: var(--display); font-size: 18px; letter-spacing: 0.05em; color: var(--accent); animation: pdfPulse 2s ease-in-out infinite; }
+    @keyframes pdfPulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+    .pdf-quip-section { font-family: var(--mono); font-size: 9px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--roaster); margin-bottom: 8px; }
+    .pdf-quip-text { font-size: 13px; color: var(--text); line-height: 1.65; max-width: 380px; min-height: 44px; font-style: italic; transition: opacity 0.3s ease; }
+    .pdf-quip-text.fade { opacity: 0; }
+    .pdf-quip-dots { display: flex; gap: 6px; margin-top: 20px; }
+    .pdf-quip-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--border-bright); transition: background 0.3s; }
+    .pdf-quip-dot.active { background: var(--roaster); }
+    .pdf-section-pills { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-top: 16px; }
+    .pdf-pill { font-family: var(--mono); font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; padding: 4px 10px; border: 1px solid var(--border); color: var(--text-dim); transition: all 0.4s; }
+    .pdf-pill.scanning { border-color: var(--accent2); color: var(--accent2); animation: pillScan 1s ease-in-out infinite; }
+    .pdf-pill.done { border-color: rgba(0,119,181,0.35); color: var(--roaster); }
+    @keyframes pillScan { 0%,100%{opacity:1} 50%{opacity:0.45} }
+
+    /* ── PDF diff output ── */
+    .pdf-output-wrap { display: none; }
+    .pdf-output-wrap.visible { display: block; }
+    .pdf-summary-bar { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--bg); border: 1px solid var(--border-bright); border-left: 3px solid var(--accent); margin-bottom: 6px; }
+    .pdf-summary-left { display: flex; align-items: center; gap: 16px; }
+    .pdf-issue-count { font-family: var(--display); font-size: 28px; color: var(--accent); line-height: 1; }
+    .pdf-issue-label { font-family: var(--mono); font-size: 8px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-dim); margin-top: 2px; }
+    .pdf-priority-pills { display: flex; gap: 5px; }
+    .pdf-pri-pill { font-family: var(--mono); font-size: 7px; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 8px; border: 1px solid; }
+    .pdf-pri-high { color: var(--accent); border-color: rgba(255,77,0,0.3); background: rgba(255,77,0,0.06); }
+    .pdf-pri-med  { color: var(--accent2); border-color: rgba(255,204,0,0.25); background: rgba(255,204,0,0.05); }
+    .pdf-pri-low  { color: var(--stack); border-color: rgba(0,230,118,0.2); background: rgba(0,230,118,0.04); }
+    .pdf-summary-right { display: flex; align-items: center; gap: 12px; }
+    .pdf-diff-stats { font-family: var(--mono); font-size: 9px; display: flex; gap: 10px; color: var(--text-dim); }
+    .pdf-diff-add { color: var(--stack); }
+    .pdf-diff-rem { color: rgba(255,100,100,0.6); }
+    .pdf-copy-all-btn { font-family: var(--display); font-size: 14px; letter-spacing: 0.08em; padding: 8px 18px; background: var(--roaster); color: #fff; border: none; cursor: pointer; transition: opacity 0.15s; }
+    .pdf-copy-all-btn:hover { opacity: 0.85; }
+    .pdf-sec-divider { font-family: var(--mono); font-size: 7px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--text-dim); display: flex; align-items: center; gap: 8px; margin: 14px 0 4px; }
+    .pdf-sec-divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+    .pdf-issue-card { background: var(--bg); border: 1px solid var(--border); margin-bottom: 3px; overflow: hidden; transition: border-color 0.2s, opacity 0.3s; }
+    .pdf-issue-card:hover { border-color: var(--border-bright); }
+    .pdf-card-head { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+    .pdf-priority-col { display: flex; flex-direction: column; align-items: center; gap: 5px; flex-shrink: 0; padding-top: 3px; }
+    .pdf-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .pdf-dot-high { background: var(--accent); box-shadow: 0 0 6px rgba(255,77,0,0.5); }
+    .pdf-dot-med  { background: var(--accent2); box-shadow: 0 0 5px rgba(255,204,0,0.4); }
+    .pdf-dot-low  { background: var(--stack); box-shadow: 0 0 5px rgba(0,230,118,0.3); }
+    .pdf-dot-line { width: 1px; flex: 1; min-height: 12px; }
+    .pdf-dot-line-high { background: rgba(255,77,0,0.2); }
+    .pdf-dot-line-med  { background: rgba(255,204,0,0.15); }
+    .pdf-dot-line-low  { background: rgba(0,230,118,0.12); }
+    .pdf-card-body { flex: 1; }
+    .pdf-card-top { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+    .pdf-card-section { font-family: var(--display); font-size: 18px; letter-spacing: 0.04em; color: var(--text-bright); }
+    .pdf-card-tag { font-family: var(--mono); font-size: 7px; letter-spacing: 0.12em; text-transform: uppercase; padding: 2px 7px; border: 1px solid; }
+    .pdf-tag-high { color: var(--accent); border-color: rgba(255,77,0,0.3); }
+    .pdf-tag-med  { color: var(--accent2); border-color: rgba(255,204,0,0.25); }
+    .pdf-tag-low  { color: var(--stack); border-color: rgba(0,230,118,0.2); }
+    .pdf-line-delta { font-family: var(--mono); font-size: 8px; display: flex; gap: 6px; margin-left: auto; }
+    .pdf-delta-add { color: var(--stack); }
+    .pdf-delta-rem { color: rgba(255,100,100,0.6); }
+    .pdf-card-roast { font-size: 12px; color: var(--text); line-height: 1.55; font-style: italic; }
+    .pdf-compare-btn { font-family: var(--mono); font-size: 7px; letter-spacing: 0.12em; text-transform: uppercase; padding: 5px 10px; background: none; border: 1px solid var(--border); color: var(--text-dim); cursor: pointer; transition: all 0.2s; flex-shrink: 0; align-self: flex-start; margin-top: 2px; }
+    .pdf-compare-btn:hover { border-color: var(--border-bright); color: var(--text); }
+    .pdf-compare-btn.open { color: rgba(255,100,100,0.6); border-color: rgba(255,100,100,0.2); }
+    .pdf-diff-grid { display: grid; grid-template-columns: 1fr; }
+    .pdf-diff-grid.split { grid-template-columns: 1fr 1fr; }
+    .pdf-diff-old { display: none; padding: 14px 16px; border-right: 1px solid var(--border); background: rgba(255,50,50,0.02); }
+    .pdf-diff-old.visible { display: block; }
+    .pdf-diff-new { padding: 14px 16px; background: rgba(0,230,118,0.02); border-left: 3px solid rgba(0,230,118,0.2); }
+    .pdf-col-label { font-family: var(--mono); font-size: 7px; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+    .pdf-col-was { color: rgba(255,100,100,0.4); }
+    .pdf-col-now { color: rgba(0,230,118,0.5); }
+    .pdf-old-text { font-size: 12px; color: rgba(240,237,232,0.22); line-height: 1.65; text-decoration: line-through; text-decoration-color: rgba(255,100,100,0.18); }
+    .pdf-new-text { font-size: 12px; color: var(--text-bright); line-height: 1.65; cursor: text; min-height: 18px; outline: none; }
+    .pdf-new-text:focus { color: #fff; }
+    .pdf-card-foot { display: flex; align-items: center; justify-content: flex-end; gap: 6px; padding: 8px 16px; border-top: 1px solid var(--border); }
+    .pdf-foot-btn { font-family: var(--mono); font-size: 7px; letter-spacing: 0.15em; text-transform: uppercase; padding: 5px 12px; background: none; border: 1px solid var(--border-bright); color: var(--text-dim); cursor: pointer; transition: all 0.2s; }
+    .pdf-foot-btn:hover { border-color: var(--roaster); color: var(--roaster); }
+    .pdf-foot-btn.dismissed { opacity: 0.3; pointer-events: none; }
+    .pdf-inline-copy-btn { font-family: var(--mono); font-size: 7px; letter-spacing: 0.1em; padding: 2px 7px; background: none; border: 1px solid var(--border); color: var(--text-dim); cursor: pointer; transition: all 0.15s; }
+    .pdf-inline-copy-btn:hover { border-color: var(--roaster); color: var(--roaster); }
+
 </style>
 </head>
 <body>
@@ -2579,37 +2715,37 @@
           <!-- CHECK mode inputs -->
           <div class="input-mode active" id="li-mode-check">
 
-            <!-- URL vs Paste toggle -->
+            <!-- Paste subtools: Post / Headline / Connection Req -->
             <div class="mode-toggle" style="margin-bottom: 14px;">
-              <button class="mode-btn active" id="btn-li-input-url" onclick="switchLiInputMode('url')">&#x1F517; Profile URL</button>
-              <button class="mode-btn" id="btn-li-input-paste" onclick="switchLiInputMode('paste')">&#x1F4CB; Paste Text</button>
+              <button class="mode-btn active" id="btn-li-post" onclick="switchLinkedInType('post')">Post</button>
+              <button class="mode-btn" id="btn-li-headline" onclick="switchLinkedInType('headline')">Headline</button>
+              <button class="mode-btn" id="btn-li-connect" onclick="switchLinkedInType('connection_request')">Connection Req</button>
             </div>
-
-            <!-- URL input -->
-            <div id="li-url-panel">
-              <div class="field">
-                <label>LinkedIn Profile URL</label>
-                <input type="url" id="linkedin-profile-url" placeholder="https://linkedin.com/in/yourprofile" style="width:100%; padding: 10px 12px; background: var(--surface); border: 1px solid var(--border); color: var(--text-bright); font-family: var(--mono); font-size: 12px; outline: none;"/>
-              </div>
-              <div id="li-fetch-error" style="display:none; font-family: var(--mono); font-size: 11px; color: #ff6b6b; margin-top: 8px; padding: 10px 12px; border: 1px solid rgba(255,107,107,0.3); background: rgba(255,107,107,0.05); line-height: 1.6;"></div>
-            </div>
-
-            <!-- Paste input (hidden by default) -->
-            <div id="li-paste-panel" style="display:none;">
-              <div class="mode-toggle">
-                <button class="mode-btn active" id="btn-li-post" onclick="switchLinkedInType('post')">Post</button>
-                <button class="mode-btn" id="btn-li-bio" onclick="switchLinkedInType('bio')">Bio</button>
-                <button class="mode-btn" id="btn-li-headline" onclick="switchLinkedInType('headline')">Headline</button>
-                <button class="mode-btn" id="btn-li-connect" onclick="switchLinkedInType('connection_request')">Connection Req</button>
-              </div>
-              <div class="field">
-                <label id="linkedin-content-label">Your LinkedIn Post</label>
-                <textarea id="linkedin-content" placeholder="Paste your LinkedIn post here..." style="min-height: 140px;"></textarea>
-              </div>
+            <div class="field">
+              <label id="linkedin-content-label">Your LinkedIn Post</label>
+              <textarea id="linkedin-content" placeholder="Paste your LinkedIn post here..." style="min-height: 120px;"></textarea>
             </div>
 
             <input type="hidden" id="linkedin-type" value="post"/>
-            <input type="hidden" id="li-input-mode" value="url"/>
+
+            <!-- PDF section — separated -->
+            <div class="li-pdf-divider">
+              <span class="li-pdf-divider-label">// or check your full profile</span>
+            </div>
+            <div class="li-pdf-section">
+              <div class="pdf-drop-zone" id="pdf-drop-zone">
+                <input type="file" id="pdf-file-input" accept=".pdf" onchange="pdfFileChosen(this)"/>
+                <div class="pdf-drop-icon">📄</div>
+                <div class="pdf-drop-label">Drop your LinkedIn PDF here</div>
+                <div class="pdf-drop-hint">or click to browse</div>
+                <div class="pdf-file-chosen" id="pdf-file-chosen"></div>
+              </div>
+              <div class="pdf-how-to">
+                <div class="pdf-how-to-label">// How to get your PDF</div>
+                <div class="pdf-how-to-text">LinkedIn → Your Profile → More → Save to PDF</div>
+              </div>
+            </div>
+
           </div>
 
           <!-- CREATE mode inputs -->
@@ -2635,11 +2771,12 @@
               {% endfor %}
             </select>
           </div>
-          <button class="submit-btn" id="li-submit-btn" onclick="submitLinkedIn()">CHECK IT 💼</button>
+          <button class="submit-btn" id="li-submit-btn" onclick="submitLinkedInSmart()">CHECK IT 💼</button>
         </div>
 
         <!-- Right: Output -->
         <div class="modal-right">
+          <!-- Standard check/create output -->
           <div class="verdict-panel" id="verdict-panel">
             <div class="verdict-waiting" id="verdict-waiting">
               <div class="verdict-icon">💼</div>
@@ -2654,6 +2791,43 @@
               <div class="xp-toast" id="roaster-xp"></div>
               <button class="share-btn" id="roaster-share-btn" onclick="openSharePanel('roaster')">⬡ SHARE RESULT</button>
             </div>
+          </div>
+
+          <!-- PDF mode output panel -->
+          <div id="pdf-right-panel" style="display:none;">
+            <!-- Spinner + Quips (shown while processing) -->
+            <div class="pdf-spinner-wrap" id="pdf-spinner-wrap">
+              <div class="pdf-hex-spinner">
+                <svg class="pdf-hex-svg" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <polygon points="36,4 64,20 64,52 36,68 8,52 8,20" stroke="#ff4d00" stroke-width="1.5" fill="none" stroke-dasharray="6 3" opacity="0.8"/>
+                  <polygon points="36,12 56,24 56,48 36,60 16,48 16,24" stroke="#ff4d00" stroke-width="0.6" fill="none" opacity="0.3"/>
+                </svg>
+                <div class="pdf-hex-inner">
+                  <div class="pdf-hex-logo">AN<span style="color:var(--accent2)">V</span></div>
+                </div>
+              </div>
+              <div class="pdf-quip-section" id="pdf-quip-section">Initialising...</div>
+              <div class="pdf-quip-text" id="pdf-quip-text">Ek second, profile load ho rahi hai...</div>
+              <div class="pdf-quip-dots" id="pdf-quip-dots">
+                <div class="pdf-quip-dot active"></div>
+                <div class="pdf-quip-dot"></div>
+                <div class="pdf-quip-dot"></div>
+                <div class="pdf-quip-dot"></div>
+                <div class="pdf-quip-dot"></div>
+                <div class="pdf-quip-dot"></div>
+              </div>
+              <div class="pdf-section-pills">
+                <div class="pdf-pill" id="ppill-headline">Headline</div>
+                <div class="pdf-pill" id="ppill-about">About</div>
+                <div class="pdf-pill" id="ppill-exp">Experience</div>
+                <div class="pdf-pill" id="ppill-skills">Skills</div>
+                <div class="pdf-pill" id="ppill-edu">Education</div>
+                <div class="pdf-pill" id="ppill-certs">Certifications</div>
+              </div>
+            </div>
+
+            <!-- Diff output (shown after response) -->
+            <div class="pdf-output-wrap" id="pdf-output-wrap"></div>
           </div>
         </div>
       </div>
@@ -3828,19 +4002,17 @@
       document.getElementById('linkedin-type').value = type;
       const labels = {
         post: 'Your LinkedIn Post',
-        bio: 'Your LinkedIn About / Bio',
         headline: 'Your LinkedIn Headline',
         connection_request: 'Your Connection Request Message'
       };
       const placeholders = {
         post: 'Paste your LinkedIn post here...',
-        bio: 'Paste your LinkedIn About section here...',
         headline: 'Paste your LinkedIn headline here...',
         connection_request: 'Paste your connection request message here...'
       };
       document.getElementById('linkedin-content-label').innerText = labels[type] || 'Your Content';
       document.getElementById('linkedin-content').placeholder = placeholders[type] || 'Paste your content here...';
-      ['post','bio','headline','connect'].forEach(t => {
+      ['post','headline','connect'].forEach(t => {
         const btnId = 'btn-li-' + t;
         const el = document.getElementById(btnId);
         if (el) el.classList.remove('active');
@@ -3860,6 +4032,15 @@
       document.getElementById('li-mode-create').classList.toggle('active', mode === 'create');
       document.getElementById('li-tab-check').classList.toggle('active', mode === 'check');
       document.getElementById('li-tab-create').classList.toggle('active', mode === 'create');
+
+      // PDF right panel only shows when actively processing a PDF
+      const verdictPanel = document.getElementById('verdict-panel');
+      const pdfRightPanel = document.getElementById('pdf-right-panel');
+      verdictPanel.style.display = '';
+      pdfRightPanel.style.display = 'none';
+      stopPdfQuips();
+      document.getElementById('pdf-spinner-wrap').classList.remove('visible');
+
       const sub = document.getElementById('li-modal-sub');
       const btn = document.getElementById('li-submit-btn');
       if (mode === 'create') {
@@ -3896,14 +4077,13 @@
       document.getElementById('linkedin-intent').placeholder = placeholders[type] || placeholders['post'];
     }
 
-    // switch between URL and paste input in LinkedIn check mode
-    function switchLiInputMode(mode) {
-      document.getElementById('li-input-mode').value = mode;
-      document.getElementById('li-url-panel').style.display = mode === 'url' ? 'block' : 'none';
-      document.getElementById('li-paste-panel').style.display = mode === 'paste' ? 'block' : 'none';
-      document.getElementById('btn-li-input-url').classList.toggle('active', mode === 'url');
-      document.getElementById('btn-li-input-paste').classList.toggle('active', mode === 'paste');
-      document.getElementById('li-fetch-error').style.display = 'none';
+    // Smart dispatcher — routes to submitPdf if PDF is chosen, else submitLinkedIn
+    function submitLinkedInSmart() {
+      if (liMode === 'check' && pdfFile) {
+        submitPdf();
+      } else {
+        submitLinkedIn();
+      }
     }
 
     async function submitLinkedIn() {
@@ -3918,35 +4098,14 @@
         const content_type = document.getElementById('linkedin-create-type').value;
         data = await callAPI('/api/linkedin', { mode: 'create', intent, content_type, comic });
       } else {
-        const inputMode = document.getElementById('li-input-mode').value;
-
-        if (inputMode === 'url') {
-          const profile_url = document.getElementById('linkedin-profile-url').value.trim();
-          if (!profile_url) { setLoading(btn, false); return alert('Enter a LinkedIn profile URL first!'); }
-          // Show fetching state
-          btn.innerText = 'Fetching profile...';
-          data = await callAPI('/api/linkedin', { mode: 'check', profile_url, comic });
-
-          // Handle fetch errors from backend
-          if (data.fetch_error) {
-            setLoading(btn, false);
-            btn.innerText = 'CHECK IT 💼';
-            const errEl = document.getElementById('li-fetch-error');
-            errEl.style.display = 'block';
-            errEl.innerText = data.fetch_error + ' → Switch to "Paste Text" above.';
-            return;
-          }
-        } else {
-          const content = document.getElementById('linkedin-content').value.trim();
-          const content_type = document.getElementById('linkedin-type').value;
-          if (!content) { setLoading(btn, false); return alert('Paste your LinkedIn content first!'); }
-          data = await callAPI('/api/linkedin', { mode: 'check', content, content_type, comic });
-        }
+        const content = document.getElementById('linkedin-content').value.trim();
+        const content_type = document.getElementById('linkedin-type').value;
+        if (!content) { setLoading(btn, false); return alert('Paste your LinkedIn content first!'); }
+        data = await callAPI('/api/linkedin', { mode: 'check', content, content_type, comic });
       }
 
       setLoading(btn, false);
-      btn.innerText = 'CHECK IT 💼';
-      document.getElementById('li-fetch-error').style.display = 'none';
+      btn.innerText = liMode === 'create' ? 'WRITE IT 💼' : 'CHECK IT 💼';
       document.getElementById('verdict-waiting').style.display = 'none';
       document.getElementById('verdict-result').style.display = 'block';
 
@@ -4548,6 +4707,287 @@
       link.download = `anvil-${shareTemplate}-${shareRatio.replace(':','-')}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
+    }
+
+
+    // ══════════════════════════════════════════════
+    // PDF TAB — LinkedIn PDF Analysis
+    // ══════════════════════════════════════════════
+
+    let pdfFile = null;
+    let pdfQuipTimer = null;
+    let pdfQuipStep = 0;
+
+    // Quip data — will be driven by selected comic in prod;
+    // hardcoded Abhishek Upmanyu style for now, backend will generate these
+    const PDF_QUIP_STEPS = [
+      { section: 'Scanning Headline',      pill: 'ppill-headline', quip: "Dekh raha hoon tere headline ko... 'Open to Opportunities' — bhai yeh toh sab likhte hain." },
+      { section: 'Headline — Issue Found', pill: 'ppill-headline', quip: "Tera Azure cert kahan gaya? Aur tera deployed project? Headline mein jagah hai bhai.", done: 'ppill-headline' },
+      { section: 'Scanning About',         pill: 'ppill-about',    quip: "'Passionate developer who loves coding.' Yeh sentence itna common hai ki ATS bhi yawn karta hai." },
+      { section: 'About — Issue Found',    pill: null,             quip: "Real kaam hai tere paas. Real project. Real users. LinkedIn pe yeh dikh nahi raha — tragically.", done: 'ppill-about' },
+      { section: 'Scanning Experience',    pill: 'ppill-exp',      quip: "Ek line mein 'Flask aur AI technologies' — tune pura backend, auth, DB, deployment kiya. Yeh sab ek line mein?", done: 'ppill-exp' },
+      { section: 'Scanning Skills',        pill: 'ppill-skills',   quip: "'Problem Solving' — bhai yeh skill nahi hai. Recruiter ko Flask chahiye, Supabase chahiye, keywords chahiye.", done: 'ppill-skills' },
+    ];
+
+    function pdfFileChosen(input) {
+      if (input.files && input.files[0]) {
+        pdfFile = input.files[0];
+        const chosen = document.getElementById('pdf-file-chosen');
+        chosen.style.display = 'block';
+        chosen.textContent = '✓ ' + pdfFile.name;
+        // Signal PDF mode on button
+        const btn = document.getElementById('li-submit-btn');
+        if (btn) btn.innerText = 'ANALYSE PDF 📄';
+      }
+    }
+
+    // Drag and drop
+    (function() {
+      const zone = document.getElementById('pdf-drop-zone');
+      if (!zone) return;
+      zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+      zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+      zone.addEventListener('drop', e => {
+        e.preventDefault();
+        zone.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file && file.type === 'application/pdf') {
+          pdfFile = file;
+          const chosen = document.getElementById('pdf-file-chosen');
+          chosen.style.display = 'block';
+          chosen.textContent = '✓ ' + file.name;
+          const btn = document.getElementById('li-submit-btn');
+          if (btn) btn.innerText = 'ANALYSE PDF 📄';
+        }
+      });
+    })();
+
+    function startPdfQuips() {
+      if (pdfQuipTimer) clearInterval(pdfQuipTimer);
+      pdfQuipStep = 0;
+      // Reset pills
+      document.querySelectorAll('.pdf-pill').forEach(p => p.className = 'pdf-pill');
+      document.querySelectorAll('.pdf-quip-dot').forEach((d,i) => d.classList.toggle('active', i === 0));
+
+      function step() {
+        if (pdfQuipStep >= PDF_QUIP_STEPS.length) return;
+        const s = PDF_QUIP_STEPS[pdfQuipStep];
+        const txt = document.getElementById('pdf-quip-text');
+        txt.classList.add('fade');
+        setTimeout(() => {
+          document.getElementById('pdf-quip-section').textContent = s.section;
+          txt.textContent = s.quip;
+          txt.classList.remove('fade');
+          if (s.pill) document.getElementById(s.pill).className = 'pdf-pill scanning';
+          if (s.done) document.getElementById(s.done).className = 'pdf-pill done';
+          document.querySelectorAll('.pdf-quip-dot').forEach((d,i) => d.classList.toggle('active', i === pdfQuipStep));
+          pdfQuipStep++;
+        }, 300);
+      }
+      step();
+      pdfQuipTimer = setInterval(step, 4000);
+    }
+
+    function stopPdfQuips() {
+      if (pdfQuipTimer) { clearInterval(pdfQuipTimer); pdfQuipTimer = null; }
+    }
+
+    async function submitPdf() {
+      if (!pdfFile) { alert('Upload your LinkedIn PDF first!'); return; }
+
+      const btn = document.getElementById('li-submit-btn');
+      const comic = document.getElementById('roaster-comic').value;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> READING PDF...';
+
+      // Switch right panel to PDF output
+      document.getElementById('verdict-panel').style.display = 'none';
+      document.getElementById('pdf-right-panel').style.display = 'block';
+      document.getElementById('pdf-spinner-wrap').classList.add('visible');
+      document.getElementById('pdf-output-wrap').classList.remove('visible');
+      document.getElementById('pdf-output-wrap').innerHTML = '';
+      startPdfQuips();
+
+      try {
+        const formData = new FormData();
+        formData.append('pdf', pdfFile);
+        formData.append('comic', comic);
+        formData.append('mode', 'analyse');
+
+        const res = await fetch('/api/linkedin-pdf', { method: 'POST', body: formData });
+        const data = await res.json();
+
+        stopPdfQuips();
+        document.getElementById('pdf-spinner-wrap').classList.remove('visible');
+
+        if (data.error) {
+          document.getElementById('pdf-output-wrap').innerHTML =
+            '<div style="padding:20px;font-family:var(--mono);font-size:12px;color:#ff6b6b;border:1px solid rgba(255,107,107,0.2);border-left:3px solid #ff6b6b;">// ' + data.error + '</div>';
+          document.getElementById('pdf-output-wrap').classList.add('visible');
+        } else {
+          renderPdfOutput(data.message || '');
+          const earned = addXP(30);
+          showXPFloat(earned, btn);
+        }
+      } catch(e) {
+        stopPdfQuips();
+        document.getElementById('pdf-spinner-wrap').classList.remove('visible');
+        document.getElementById('pdf-output-wrap').innerHTML =
+          '<div style="padding:20px;font-family:var(--mono);font-size:12px;color:#ff6b6b;">// Something went wrong. Try again.</div>';
+        document.getElementById('pdf-output-wrap').classList.add('visible');
+      }
+
+      btn.disabled = false;
+      btn.innerHTML = 'CHECK IT 💼';
+    }
+
+    function renderPdfOutput(raw) {
+      // Parse [SECTION:...][PRIORITY:...][ISSUE:...][WAS:...][NOW:...] blocks
+      const blockRegex = /\[SECTION:\s*([^\]]+)\]\s*\[PRIORITY:\s*([^\]]+)\]\s*\[ISSUE:\s*([^\]]+)\]\s*\[WAS:\s*([\s\S]*?)\]\s*\[NOW:\s*([\s\S]*?)\](?=\[SECTION:|$)/g;
+      const issues = [];
+      let match;
+      while ((match = blockRegex.exec(raw)) !== null) {
+        issues.push({
+          section:  match[1].trim(),
+          priority: match[2].trim(),
+          issue:    match[3].trim(),
+          was:      match[4].trim(),
+          now:      match[5].trim(),
+        });
+      }
+
+      if (issues.length === 0) {
+        // Fallback: show raw response if parsing fails
+        document.getElementById('pdf-output-wrap').innerHTML =
+          '<div style="padding:20px;font-family:var(--mono);font-size:12px;color:var(--text);line-height:1.7;white-space:pre-wrap;">' + raw + '</div>';
+        document.getElementById('pdf-output-wrap').classList.add('visible');
+        return;
+      }
+
+      const high = issues.filter(i => i.priority.toLowerCase() === 'high');
+      const med  = issues.filter(i => i.priority.toLowerCase() === 'medium');
+      const low  = issues.filter(i => i.priority.toLowerCase() === 'low');
+
+      // Count lines added/removed (rough estimate)
+      let totalAdd = 0, totalRem = 0;
+      issues.forEach(i => {
+        totalAdd += i.now.split('\n').length;
+        totalRem += i.was.split('\n').length;
+      });
+
+      let html = '';
+
+      // Summary bar
+      html += '<div class="pdf-summary-bar">';
+      html += '<div class="pdf-summary-left">';
+      html += '<div><div class="pdf-issue-count">' + issues.length + '</div><div class="pdf-issue-label">Issues Found</div></div>';
+      html += '<div class="pdf-priority-pills">';
+      if (high.length) html += '<span class="pdf-pri-pill pdf-pri-high">' + high.length + ' High</span>';
+      if (med.length)  html += '<span class="pdf-pri-pill pdf-pri-med">'  + med.length  + ' Medium</span>';
+      if (low.length)  html += '<span class="pdf-pri-pill pdf-pri-low">'  + low.length  + ' Low</span>';
+      html += '</div></div>';
+      html += '<div class="pdf-summary-right">';
+      html += '<div class="pdf-diff-stats"><span class="pdf-diff-add">+' + totalAdd + ' lines</span><span class="pdf-diff-rem">−' + totalRem + ' lines</span></div>';
+      html += '<button class="pdf-copy-all-btn" onclick="pdfCopyAll()">Copy All →</button>';
+      html += '</div></div>';
+
+      // Render groups
+      function renderGroup(group, label) {
+        if (!group.length) return '';
+        let g = '<div class="pdf-sec-divider">' + label + '</div>';
+        group.forEach((issue, idx) => {
+          const pri = issue.priority.toLowerCase();
+          const dotCls = 'pdf-dot-' + (pri === 'high' ? 'high' : pri === 'medium' ? 'med' : 'low');
+          const lineCls = 'pdf-dot-line-' + (pri === 'high' ? 'high' : pri === 'medium' ? 'med' : 'low');
+          const tagCls  = 'pdf-tag-' + (pri === 'high' ? 'high' : pri === 'medium' ? 'med' : 'low');
+          const priLabel = pri.charAt(0).toUpperCase() + pri.slice(1);
+          const uid = 'pdi-' + label.replace(/\s/g,'') + idx;
+          g += '<div class="pdf-issue-card" id="card-' + uid + '">';
+          g += '<div class="pdf-card-head">';
+          g += '<div class="pdf-priority-col"><div class="pdf-dot ' + dotCls + '"></div><div class="pdf-dot-line ' + lineCls + '"></div></div>';
+          g += '<div class="pdf-card-body">';
+          g += '<div class="pdf-card-top">';
+          g += '<span class="pdf-card-section">' + issue.section + '</span>';
+          g += '<span class="pdf-card-tag ' + tagCls + '">' + priLabel + '</span>';
+          g += '</div>';
+          g += '<div class="pdf-card-roast">' + issue.issue + '</div>';
+          g += '</div>';
+          g += '<button class="pdf-compare-btn" onclick="pdfToggleCompare(this)">Compare</button>';
+          g += '</div>';
+          // Diff grid
+          g += '<div class="pdf-diff-grid" id="dg-' + uid + '">';
+          g += '<div class="pdf-diff-old" id="old-' + uid + '">';
+          g += '<div class="pdf-col-label pdf-col-was">✕ Was</div>';
+          g += '<div class="pdf-old-text">' + escHtml(issue.was) + '</div>';
+          g += '</div>';
+          g += '<div class="pdf-diff-new">';
+          g += '<div class="pdf-col-label pdf-col-now"><span>✓ ANVIL Rewrite</span>';
+          g += '<button class="pdf-inline-copy-btn" onclick="pdfCopyCard(this)">Copy</button>';
+          g += '</div>';
+          g += '<div class="pdf-new-text" contenteditable="true">' + escHtml(issue.now) + '</div>';
+          g += '</div></div>';
+          // Footer
+          g += '<div class="pdf-card-foot">';
+          g += '<button class="pdf-foot-btn" onclick="pdfCopyCard(this)">Copy Rewrite</button>';
+          g += '<button class="pdf-foot-btn" onclick="pdfDismissCard(this)">Dismiss</button>';
+          g += '</div></div>';
+        });
+        return g;
+      }
+
+      html += renderGroup(high, 'High Priority');
+      html += renderGroup(med,  'Medium Priority');
+      html += renderGroup(low,  'Low Priority');
+
+      // XP toast
+      html += '<div class="xp-toast" style="margin-top:14px;">⬡ +30 XP EARNED — LINKEDIN PDF ANALYSED</div>';
+
+      document.getElementById('pdf-output-wrap').innerHTML = html;
+      document.getElementById('pdf-output-wrap').classList.add('visible');
+    }
+
+    function escHtml(str) {
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function pdfToggleCompare(btn) {
+      const card = btn.closest('.pdf-issue-card');
+      const dg  = card.querySelector('.pdf-diff-grid');
+      const old = card.querySelector('.pdf-diff-old');
+      const open = old.classList.toggle('visible');
+      dg.classList.toggle('split', open);
+      btn.textContent = open ? 'Hide Original' : 'Compare';
+      btn.classList.toggle('open', open);
+    }
+
+    function pdfCopyCard(btn) {
+      const card = btn.closest('.pdf-issue-card');
+      const text = card.querySelector('.pdf-new-text').innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        const orig = btn.textContent;
+        btn.textContent = '✓ Copied';
+        setTimeout(() => btn.textContent = orig, 1500);
+      });
+    }
+
+    function pdfDismissCard(btn) {
+      const card = btn.closest('.pdf-issue-card');
+      card.style.opacity = '0.3';
+      btn.classList.add('dismissed');
+      btn.textContent = 'Dismissed';
+      card.querySelector('.pdf-foot-btn:first-child').classList.add('dismissed');
+    }
+
+    function pdfCopyAll() {
+      const texts = [];
+      document.querySelectorAll('.pdf-new-text').forEach(el => {
+        texts.push(el.innerText.trim());
+      });
+      navigator.clipboard.writeText(texts.join('\n\n')).then(() => {
+        const btn = document.querySelector('.pdf-copy-all-btn');
+        btn.textContent = '✓ All Copied';
+        setTimeout(() => btn.textContent = 'Copy All →', 1800);
+      });
     }
 
     // Close share on overlay click
