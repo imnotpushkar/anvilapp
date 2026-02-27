@@ -19,6 +19,7 @@ from services.linkedin_service import LinkedInService
 from comics import (
     get_linkedin_prompt,
     get_linkedin_create_prompt,
+    get_linkedin_pdf_quips_prompt,
     get_linkedin_pdf_scan_prompt,
     get_linkedin_pdf_prompt,
     get_idea_create_prompt,
@@ -117,8 +118,14 @@ def linkedin_pdf():
     if extract_error:
         return jsonify({"error": extract_error}), 400
 
+    if mode == "quips":
+        # Parallel call 1 — profile-specific quips for the reading animation
+        prompt = get_linkedin_pdf_quips_prompt(text, comic)
+        result = AIService.ask(prompt)
+        return jsonify({"mode": "quips", "message": result})
+
     if mode == "scan":
-        # Pass 1 — just generate questions, no comic persona, fast
+        # Parallel call 2 — targeted questions based on profile gaps — just generate questions, no comic persona, fast
         prompt = get_linkedin_pdf_scan_prompt(text)
         result = AIService.ask(prompt)
         return jsonify({"mode": "scan", "message": result})
