@@ -2547,6 +2547,109 @@
     }
     .pdf-q-analyse-btn:hover { opacity: 0.85; }
     .pdf-q-analyse-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    /* ── PDF Question Popup — one at a time, level-up modal style ─────── */
+    .pdf-q-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.72);
+      backdrop-filter: blur(4px);
+      z-index: 9990;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s;
+    }
+    .pdf-q-overlay.show { opacity: 1; pointer-events: all; }
+    .pdf-q-popup {
+      background: var(--surface);
+      border: 2px solid var(--roaster);
+      padding: 36px 40px 32px;
+      max-width: 520px;
+      width: calc(100% - 48px);
+      position: relative;
+      transform: translateY(18px) scale(0.97);
+      transition: transform 0.25s;
+      box-shadow: 0 0 56px rgba(0,119,181,0.22);
+    }
+    .pdf-q-overlay.show .pdf-q-popup { transform: translateY(0) scale(1); }
+    .pdf-q-popup-counter {
+      position: absolute;
+      top: 18px; right: 20px;
+      font-family: var(--mono);
+      font-size: 8px;
+      letter-spacing: 0.15em;
+      color: var(--text-dim);
+    }
+    .pdf-q-popup-section {
+      font-family: var(--mono);
+      font-size: 8px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--roaster);
+      margin-bottom: 8px;
+    }
+    .pdf-q-popup-quip {
+      font-size: 13px;
+      color: var(--text);
+      line-height: 1.65;
+      font-style: italic;
+      margin-bottom: 22px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--border);
+      min-height: 40px;
+    }
+    .pdf-q-popup-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 10px;
+    }
+    .pdf-q-popup-input {
+      width: 100%;
+      box-sizing: border-box;
+      background: var(--bg);
+      border: 1px solid var(--border-bright);
+      color: var(--text-bright);
+      font-family: var(--mono);
+      font-size: 13px;
+      padding: 12px 14px;
+      outline: none;
+      resize: none;
+      transition: border-color 0.2s;
+      line-height: 1.5;
+    }
+    .pdf-q-popup-input:focus { border-color: var(--roaster); }
+    .pdf-q-popup-input::placeholder { color: var(--text-dim); font-size: 11px; }
+    .pdf-q-popup-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 14px;
+    }
+    .pdf-q-popup-hint {
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--text-dim);
+      letter-spacing: 0.06em;
+    }
+    .pdf-q-popup-hint span { color: var(--roaster); }
+    .pdf-q-popup-skip {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      background: none;
+      border: 1px solid var(--border);
+      padding: 6px 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .pdf-q-popup-skip:hover { border-color: var(--border-bright); color: var(--text); }
 
 
 </style>
@@ -2634,6 +2737,26 @@
   <div class="unlock-banner" id="unlockBanner">
     <div class="unlock-title">🔓 UNLOCKED!</div>
     <div class="unlock-sub" id="unlockSub">// Ravi Gupta is now available</div>
+  </div>
+
+  <!-- PDF Question Popup (one-at-a-time interview flow) -->
+  <div class="pdf-q-overlay" id="pdfQOverlay">
+    <div class="pdf-q-popup">
+      <div class="pdf-q-popup-counter" id="pdfQCounter">// 1 of 3</div>
+      <div class="pdf-q-popup-section" id="pdfQSection">Reading Experience</div>
+      <div class="pdf-q-popup-quip" id="pdfQQuip">&nbsp;</div>
+      <div class="pdf-q-popup-label" id="pdfQLabel">What was the scale of this project?</div>
+      <textarea
+        class="pdf-q-popup-input"
+        id="pdfQInput"
+        rows="2"
+        placeholder="e.g. 10k users, Rs.2Cr processed, 50k requests/day"
+      ></textarea>
+      <div class="pdf-q-popup-footer">
+        <div class="pdf-q-popup-hint">Press <span>Enter &#8629;</span> to continue</div>
+        <button class="pdf-q-popup-skip" id="pdfQSkipBtn">Skip &rarr;</button>
+      </div>
+    </div>
   </div>
 
   <!-- HERO -->
@@ -4837,65 +4960,65 @@
 
     // ══════════════════════════════════════════════
     // PDF — Two-Pass LinkedIn PDF Analysis
-    // Pass 1: scan → questions
-    // Pass 2: analyse → diff output
-    // ══════════════════════════════════════════════
+    // Call 1 (quips) + Call 2 (questions) fire in parallel on PDF upload
+    // Call 3 (analyse) fires after the popup question flow completes
+    // ════════════════════════════════════════════════════════════════
 
-    let pdfFile = null;
-    let pdfQuipTimer = null;
-    let pdfQuipStep = 0;
-    let pdfRawText = null;     // store PDF text between passes (we re-upload; this is just for UX)
-    let pdfScanQuestions = []; // parsed questions from Pass 1
+    let pdfFile           = null;
+    let pdfQuipTimer      = null;
+    let pdfQuipStep       = 0;
+    let pdfQuipSteps      = [];   // profile-specific quips from Call 1
+    let pdfScanQuestions  = [];   // targeted questions from Call 2
+    let pdfAnswers        = {};   // collected answers from popup flow
+    let pdfCurrentQ       = 0;    // current popup question index
 
-    const PDF_QUIP_STEPS = [
-      { section: 'Scanning Headline',   pill: 'ppill-headline', quip: "Dekh raha hoon tere headline ko... 'Open to Opportunities' — bhai yeh toh sab likhte hain." },
-      { section: 'Headline',            pill: null,             quip: "Tera differentiator kahan hai? Recruiter ko reason chahiye, job title toh CV pe hai hi.", done: 'ppill-headline' },
-      { section: 'Scanning About',      pill: 'ppill-about',    quip: "'Passionate developer who loves coding.' Yeh sentence itna common hai ki ATS bhi yawn karta hai." },
-      { section: 'About',               pill: null,             quip: "Real kaam hai tere paas. Real project. Real users. LinkedIn pe yeh dikh nahi raha — tragically.", done: 'ppill-about' },
-      { section: 'Scanning Experience', pill: 'ppill-exp',      quip: "Ek line mein 'worked on backend' — tune pura system kiya. Yeh sab ek line mein?", done: 'ppill-exp' },
-      { section: 'Scanning Skills',     pill: 'ppill-skills',   quip: "'Problem Solving' — bhai yeh skill nahi hai. Recruiter ko Flask chahiye, Docker chahiye, keywords chahiye.", done: 'ppill-skills' },
+    // Fallback quips — used only while Call 1 is still loading
+    const PDF_FALLBACK_QUIPS = [
+      { section: 'Reading Profile',   quip: "Dekh raha hoon... ek second." },
+      { section: 'Scanning Sections', quip: "Headline, About, Experience — sab padh raha hoon." },
+      { section: 'Finding Gaps',      quip: "Kahan se information missing hai, dhoondh raha hoon." },
+      { section: 'Almost Done',       quip: "Bas thoda aur..." },
     ];
 
-    const PDF_SCAN_QUIP_STEPS = [
-      { section: 'Reading Profile',    pill: 'ppill-headline', quip: "Pehle padh toh loon poora... teri headline dekh ke already samajh aa gaya kya hoga." },
-      { section: 'Finding Gaps',       pill: 'ppill-about',    quip: "Dekh raha hoon exactly kahan se information missing hai — tujhse kuch poochna padega." },
-      { section: 'Writing Questions',  pill: 'ppill-exp',      quip: "3-4 sawal likh raha hoon jo actually matter karte hain — generic nahi, tere profile ke baare mein specific.", done: 'ppill-exp' },
-      { section: 'Almost Done',        pill: 'ppill-skills',   quip: "Bas thoda aur... phir tu answer karega aur main sahi se rewrite karunga.", done: 'ppill-skills' },
-    ];
-
-    function pdfFileChosen(input) {
-      if (input.files && input.files[0]) {
-        pdfFile = input.files[0];
-        const chosen = document.getElementById('pdf-file-chosen');
-        chosen.style.display = 'block';
-        chosen.textContent = '✓ ' + pdfFile.name;
+    function parsePdfQuips(raw) {
+      const regex = /\[QUIP:\s*section=([^|]+)\|\s*quip=([^\]]+)\]/g;
+      const quips = [];
+      let m;
+      while ((m = regex.exec(raw)) !== null) {
+        quips.push({ section: m[1].trim(), quip: m[2].trim() });
       }
+      return quips;
     }
 
-    // Drag and drop
-    (function() {
-      const zone = document.getElementById('pdf-drop-zone');
-      if (!zone) return;
-      zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
-      zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
-      zone.addEventListener('drop', e => {
-        e.preventDefault();
-        zone.classList.remove('dragover');
-        const file = e.dataTransfer.files[0];
-        if (file && file.type === 'application/pdf') {
-          pdfFile = file;
-          const chosen = document.getElementById('pdf-file-chosen');
-          chosen.style.display = 'block';
-          chosen.textContent = '✓ ' + file.name;
-        }
-      });
-    })();
+    function parsePdfQuestions(raw) {
+      const regex = /\[QUESTION:\s*([^|\]]+)\|([^|\]]+)\|([^\]]+)\]/g;
+      const questions = [];
+      let m;
+      while ((m = regex.exec(raw)) !== null) {
+        questions.push({
+          id:          m[1].trim(),
+          label:       m[2].trim(),
+          placeholder: m[3].trim(),
+        });
+      }
+      return questions;
+    }
+
+    // ── Quip animation ──────────────────────────────────────────────────────
+
+    const PDF_PILL_MAP = {
+      'headline':       'ppill-headline',
+      'about':          'ppill-about',
+      'experience':     'ppill-exp',
+      'skills':         'ppill-skills',
+      'education':      'ppill-edu',
+      'certifications': 'ppill-certs',
+    };
 
     function startPdfQuips(steps) {
       if (pdfQuipTimer) clearInterval(pdfQuipTimer);
       pdfQuipStep = 0;
-      const stepsArr = steps || PDF_QUIP_STEPS;
-      // Reset pills
+      const stepsArr = (steps && steps.length) ? steps : PDF_FALLBACK_QUIPS;
       document.querySelectorAll('.pdf-pill').forEach(p => p.className = 'pdf-pill');
       document.querySelectorAll('.pdf-quip-dot').forEach((d, i) => d.classList.toggle('active', i === 0));
 
@@ -4908,8 +5031,22 @@
           document.getElementById('pdf-quip-section').textContent = s.section;
           txt.textContent = s.quip;
           txt.classList.remove('fade');
-          if (s.pill) document.getElementById(s.pill).className = 'pdf-pill scanning';
-          if (s.done) document.getElementById(s.done).className = 'pdf-pill done';
+          // Highlight matching pill
+          const key = s.section.toLowerCase().replace(/^(scanning|reading)\s+/, '').trim();
+          const pillId = PDF_PILL_MAP[key];
+          if (pillId) {
+            const pill = document.getElementById(pillId);
+            if (pill) pill.className = 'pdf-pill scanning';
+          }
+          // Mark previous as done
+          if (pdfQuipStep > 0) {
+            const prevKey = stepsArr[pdfQuipStep - 1].section.toLowerCase().replace(/^(scanning|reading)\s+/, '').trim();
+            const prevId = PDF_PILL_MAP[prevKey];
+            if (prevId) {
+              const prev = document.getElementById(prevId);
+              if (prev) prev.className = 'pdf-pill done';
+            }
+          }
           document.querySelectorAll('.pdf-quip-dot').forEach((d, i) => d.classList.toggle('active', i === pdfQuipStep));
           pdfQuipStep++;
         }, 300);
@@ -4935,7 +5072,67 @@
       document.getElementById('pdf-spinner-wrap').classList.remove('visible');
     }
 
-    // ── PASS 1: Upload → Scan → Show Questions ──
+    // ── Popup question flow ─────────────────────────────────────────────────
+
+    function pdfShowQuestion(index) {
+      const q = pdfScanQuestions[index];
+      if (!q) return;
+      const total = pdfScanQuestions.length;
+
+      document.getElementById('pdfQCounter').textContent = `// ${index + 1} of ${total}`;
+      // Section label: use q.section if present, else derive from question id
+      document.getElementById('pdfQSection').textContent = 'Reading ' + (q.section || 'Profile');
+
+      // Find the best matching quip for this section
+      const matchedQuip = pdfQuipSteps.find(s =>
+        s.section && q.section &&
+        s.section.toLowerCase().includes(q.section.toLowerCase().split(/\s+/)[0])
+      ) || pdfQuipSteps[index] || null;
+      document.getElementById('pdfQQuip').textContent = matchedQuip
+        ? matchedQuip.quip
+        : 'Tere baare mein thoda aur jaanna chahta hoon...';
+
+      document.getElementById('pdfQLabel').textContent = q.label;
+      const input = document.getElementById('pdfQInput');
+      input.placeholder = q.placeholder || '';
+      input.value = '';
+
+      document.getElementById('pdfQOverlay').classList.add('show');
+      setTimeout(() => input.focus(), 280);
+    }
+
+    function pdfAdvanceQuestion(skip) {
+      const q = pdfScanQuestions[pdfCurrentQ];
+      if (q && !skip) {
+        const val = document.getElementById('pdfQInput').value.trim();
+        if (val) pdfAnswers[q.id] = val;
+      }
+      pdfCurrentQ++;
+      if (pdfCurrentQ < pdfScanQuestions.length) {
+        // Slide out then show next
+        document.getElementById('pdfQOverlay').classList.remove('show');
+        setTimeout(() => pdfShowQuestion(pdfCurrentQ), 260);
+      } else {
+        document.getElementById('pdfQOverlay').classList.remove('show');
+        setTimeout(() => pdfRunAnalysis(), 300);
+      }
+    }
+
+    // Wire up popup Enter key + Skip button once on load
+    (function initPdfPopup() {
+      const input   = document.getElementById('pdfQInput');
+      const skipBtn = document.getElementById('pdfQSkipBtn');
+      if (input) {
+        input.addEventListener('keydown', e => {
+          if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); pdfAdvanceQuestion(false); }
+        });
+      }
+      if (skipBtn) {
+        skipBtn.addEventListener('click', () => pdfAdvanceQuestion(true));
+      }
+    })();
+
+    // ── CALL 1 + CALL 2 (parallel) ──────────────────────────────────────────
 
     async function submitPdf() {
       if (!pdfFile) { alert('Upload your LinkedIn PDF first!'); return; }
@@ -4945,31 +5142,64 @@
       btn.innerHTML = '<span class="spinner"></span> READING PDF...';
 
       pdfShowSpinner();
-      startPdfQuips(PDF_SCAN_QUIP_STEPS);
+      startPdfQuips(PDF_FALLBACK_QUIPS);   // start with fallback immediately
+      pdfAnswers       = {};
+      pdfCurrentQ      = 0;
+      pdfScanQuestions = [];
+      pdfQuipSteps     = [];
+
+      const comic = document.getElementById('roaster-comic').value;
+
+      function makeForm(mode) {
+        const fd = new FormData();
+        fd.append('pdf', pdfFile);
+        fd.append('comic', comic);
+        fd.append('mode', mode);
+        return fd;
+      }
 
       try {
-        const formData = new FormData();
-        formData.append('pdf', pdfFile);
-        formData.append('mode', 'scan');
+        // Fire both in parallel
+        const [quipsRes, scanRes] = await Promise.all([
+          fetch('/api/linkedin-pdf', { method: 'POST', body: makeForm('quips') }),
+          fetch('/api/linkedin-pdf', { method: 'POST', body: makeForm('scan') }),
+        ]);
+        const [quipsData, scanData] = await Promise.all([quipsRes.json(), scanRes.json()]);
 
-        const res = await fetch('/api/linkedin-pdf', { method: 'POST', body: formData });
-        const data = await res.json();
-
-        pdfHideSpinner();
-
-        if (data.error) {
-          document.getElementById('pdf-output-wrap').innerHTML =
-            '<div style="padding:20px;font-family:var(--mono);font-size:12px;color:#ff6b6b;border:1px solid rgba(255,107,107,0.2);border-left:3px solid #ff6b6b;">// ' + escHtml(data.error) + '</div>';
-          document.getElementById('pdf-output-wrap').classList.add('visible');
-        } else {
-          pdfScanQuestions = parsePdfQuestions(data.message || '');
-          if (pdfScanQuestions.length === 0) {
-            // No questions parsed — skip straight to analysis
-            await submitPdfAnalyse();
-          } else {
-            renderPdfQuestions(pdfScanQuestions);
+        // Swap in real profile-specific quips
+        if (!quipsData.error && quipsData.message) {
+          const parsed = parsePdfQuips(quipsData.message);
+          if (parsed.length > 0) {
+            pdfQuipSteps = parsed;
+            stopPdfQuips();
+            startPdfQuips(pdfQuipSteps);
           }
         }
+
+        // Handle questions
+        if (scanData.error) {
+          pdfHideSpinner();
+          document.getElementById('pdf-output-wrap').innerHTML =
+            '<div style="padding:20px;font-family:var(--mono);font-size:12px;color:#ff6b6b;border-left:3px solid #ff6b6b;">// ' + escHtml(scanData.error) + '</div>';
+          document.getElementById('pdf-output-wrap').classList.add('visible');
+          btn.disabled = false;
+          btn.innerHTML = 'CHECK IT 💼';
+          return;
+        }
+
+        pdfScanQuestions = parsePdfQuestions(scanData.message || '');
+
+        // Let quips breathe for 3s before showing first question
+        setTimeout(() => {
+          pdfHideSpinner();
+          if (pdfScanQuestions.length === 0) {
+            pdfRunAnalysis();
+          } else {
+            pdfCurrentQ = 0;
+            pdfShowQuestion(0);
+          }
+        }, 3000);
+
       } catch(e) {
         pdfHideSpinner();
         document.getElementById('pdf-output-wrap').innerHTML =
@@ -4979,61 +5209,18 @@
 
       btn.disabled = false;
       btn.innerHTML = 'CHECK IT 💼';
-      document.querySelector('[data-mode="pdf"] .pdf-submit-label') && (document.getElementById('li-submit-btn').innerHTML = 'CHECK IT 💼');
     }
 
-    function parsePdfQuestions(raw) {
-      // Parse [QUESTION: id | label | placeholder] blocks
-      const regex = /\[QUESTION:\s*([^|\]]+)\|([^|\]]+)\|([^\]]+)\]/g;
-      const questions = [];
-      let m;
-      while ((m = regex.exec(raw)) !== null) {
-        questions.push({
-          id:          m[1].trim(),
-          label:       m[2].trim(),
-          placeholder: m[3].trim(),
-        });
-      }
-      return questions;
-    }
+    // ── CALL 3: Full analysis with collected answers ─────────────────────────
 
-    function renderPdfQuestions(questions) {
-      const list = document.getElementById('pdf-q-list');
-      list.innerHTML = '';
-
-      questions.forEach((q, i) => {
-        const card = document.createElement('div');
-        card.className = 'pdf-q-card';
-        card.innerHTML = `
-          <div class="pdf-q-num">// Question ${i + 1} of ${questions.length}</div>
-          <div class="pdf-q-label">${escHtml(q.label)}</div>
-          <textarea
-            class="pdf-q-input"
-            id="pdf-qa-${escHtml(q.id)}"
-            placeholder="${escHtml(q.placeholder)}"
-            rows="2"
-          ></textarea>
-          <span class="pdf-q-skip" onclick="this.closest('.pdf-q-card').querySelector('.pdf-q-input').value=''">skip</span>
-        `;
-        list.appendChild(card);
-      });
-
-      document.getElementById('pdf-q-wrap').classList.add('visible');
-    }
-
-    // ── PASS 2: Answers → Full Analysis ──
-
-    async function submitPdfAnalyse() {
+    async function pdfRunAnalysis() {
       if (!pdfFile) { alert('PDF not found. Please re-upload.'); return; }
-
-      const analyseBtn = document.getElementById('pdf-q-wrap').querySelector('.pdf-q-analyse-btn');
-      if (analyseBtn) { analyseBtn.disabled = true; analyseBtn.textContent = 'Analysing...'; }
 
       const mainBtn = document.getElementById('li-submit-btn');
       mainBtn.disabled = true;
 
       pdfShowSpinner();
-      startPdfQuips(PDF_QUIP_STEPS);
+      startPdfQuips(pdfQuipSteps.length ? pdfQuipSteps : PDF_FALLBACK_QUIPS);
 
       const comic = document.getElementById('roaster-comic').value;
 
@@ -5042,24 +5229,18 @@
         formData.append('pdf', pdfFile);
         formData.append('comic', comic);
         formData.append('mode', 'analyse');
-
-        // Collect answers
-        pdfScanQuestions.forEach(q => {
-          const inputEl = document.getElementById('pdf-qa-' + q.id);
-          if (inputEl && inputEl.value.trim()) {
-            formData.append('answer_' + q.id, inputEl.value.trim());
-          }
+        Object.entries(pdfAnswers).forEach(([qid, val]) => {
+          if (val && val.trim()) formData.append('answer_' + qid, val.trim());
         });
 
-        const res = await fetch('/api/linkedin-pdf', { method: 'POST', body: formData });
+        const res  = await fetch('/api/linkedin-pdf', { method: 'POST', body: formData });
         const data = await res.json();
 
         pdfHideSpinner();
-        document.getElementById('pdf-q-wrap').classList.remove('visible');
 
         if (data.error) {
           document.getElementById('pdf-output-wrap').innerHTML =
-            '<div style="padding:20px;font-family:var(--mono);font-size:12px;color:#ff6b6b;border:1px solid rgba(255,107,107,0.2);border-left:3px solid #ff6b6b;">// ' + escHtml(data.error) + '</div>';
+            '<div style="padding:20px;font-family:var(--mono);font-size:12px;color:#ff6b6b;border-left:3px solid #ff6b6b;">// ' + escHtml(data.error) + '</div>';
           document.getElementById('pdf-output-wrap').classList.add('visible');
         } else {
           renderPdfOutput(data.message || '');
@@ -5075,8 +5256,11 @@
 
       mainBtn.disabled = false;
       mainBtn.innerHTML = 'CHECK IT 💼';
-      if (analyseBtn) { analyseBtn.disabled = false; analyseBtn.textContent = 'Analyse Now →'; }
     }
+
+    // Legacy alias kept for the "Analyse Now" button in pdf-q-wrap
+    async function submitPdfAnalyse() { await pdfRunAnalysis(); }
+
 
     function renderPdfOutput(raw) {
       const blockRegex = /\[SECTION:\s*([^\]]+)\]\s*\[PRIORITY:\s*([^\]]+)\]\s*\[ISSUE:\s*([^\]]+)\]\s*\[WAS:\s*([\s\S]*?)\]\s*\[NOW:\s*([\s\S]*?)\](?=\[SECTION:|$)/g;
