@@ -649,65 +649,206 @@ The actual {goal} — ready to copy and paste. Nothing else. No preamble, no exp
 {LINKEDIN_ENGLISH_NOTE}"""
 
 
-def get_linkedin_pdf_prompt(comic, extracted_text, mode="analyse", current_hour=None):
+
+# ── LINKEDIN PDF QUALITY BENCHMARK ────────────────────────────────────────────
+# This is what top-performing LinkedIn profiles actually look like.
+# Groq reads this before analysing any PDF — it becomes the reference standard.
+
+LINKEDIN_PDF_BENCHMARK = """
+WHAT WORLD-CLASS LINKEDIN CONTENT LOOKS LIKE
+(This is your reference standard. Every rewrite must move toward this.)
+
+── HEADLINES ──
+BAD:  "Software Engineer at TCS | B.Tech CSE | Open to Opportunities"
+BAD:  "Passionate Developer | Python | Flask | Looking for roles"
+GOOD: "Backend Engineer · Built REST APIs serving 200k req/day · Open to founding-team roles"
+GOOD: "Product Manager @ Razorpay | Took 0→1 on checkout SDK used by 8k merchants | Ex-Swiggy"
+
+Why good works: Role + one specific proof point + what they're looking for. No fluff. Numbers anchor credibility.
+
+── ABOUT / BIO ──
+BAD:  "I am a passionate software developer with 2 years of experience in Python, Flask, and SQL.
+       I love solving complex problems and building scalable solutions. I am seeking opportunities
+       to grow in a collaborative team environment."
+
+GOOD: "I build backend systems that don't fall over. Currently at Razorpay, where I own the
+       payout infra handling ₹40Cr/day — built the retry logic that cut failed transactions by 60%.
+       Before this, shipped a solo project (ANVIL) that hit 500 users in its first week.
+       If you're building something that needs to scale, I'd like to talk."
+
+Why good works: Opens with what they DO (not feelings about it). One specific proof point with numbers.
+Mentions something concrete outside the job. Ends with a CTA that tells you exactly who should reach out.
+
+── EXPERIENCE BULLETS ──
+BAD:  "Worked on backend systems for the payments team."
+BAD:  "Responsible for developing and maintaining APIs."
+BAD:  "Collaborated with cross-functional teams to deliver projects on time."
+
+GOOD: "Built payout retry system in Python/Celery — reduced failed transactions by 60%, handling ₹40Cr/day"
+GOOD: "Migrated monolith auth service to microservices — cut average login latency from 800ms to 120ms"
+GOOD: "Led 3-person team to ship mobile checkout SDK; adopted by 8,000+ merchants within 90 days of launch"
+
+Why good works: Action verb → what was built/done → result with a number. Every bullet is a proof point.
+No "collaborated", no "responsible for", no "worked on". If there's no number, there's a specific scale indicator.
+
+── SKILLS ──
+BAD:  "Python, Java, JavaScript, Problem Solving, Communication, Team Player, Fast Learner"
+GOOD: "Python · Flask · PostgreSQL · Redis · AWS (EC2/S3/RDS) · Docker · CI/CD (GitHub Actions)"
+
+Why good works: ATS-scannable keywords. No soft skills in the skills section — those go in bullets as proof.
+
+── WHAT RECRUITERS AND FOUNDERS ACTUALLY LOOK FOR ──
+1. Can I see what this person built? (Not just where they worked)
+2. At what scale? (Numbers — users, revenue, requests, % improvement)
+3. What's their one-line differentiation? (Why hire THIS person not the 200 others with Flask on their CV)
+4. Does this read like a human or like a job description submitted by ChatGPT?
+
+── THE MOST COMMON MISTAKES IN INDIAN TECH PROFILES ──
+- "Open to Opportunities" as headline — tells recruiter you have no idea what you want
+- "Passionate about technology" — every profile says this, means nothing
+- Experience bullets that describe responsibilities not achievements
+- Skills section including "MS Office", "Problem Solving", "Communication"
+- About section written in third person ("Pushkar is a dedicated...")
+- Certifications front-loaded before actual work experience
+- No links to actual work (GitHub, deployed projects, writing)
+- Generic objective statement at top instead of a real summary
+"""
+
+
+
+def get_linkedin_pdf_scan_prompt(pdf_text, current_hour=None):
     """
-    Analyse a full LinkedIn profile extracted from PDF.
-    Returns structured [SECTION/PRIORITY/ISSUE/WAS/NOW] blocks — one per issue found.
-    Frontend parses these into diff cards grouped by priority.
-    mode: 'analyse' (default) — find all issues and rewrite them
+    Pass 1 — quick scan to generate targeted questions.
+    No comic persona here — this is analytical, not a roast.
+    Returns structured questions the user must answer before the full analysis.
+    Output: [QUESTION: id | Short label | placeholder text] blocks only.
+    """
+    if current_hour is None:
+        current_hour = get_ist_hour()
+
+    return f"""You are an expert LinkedIn profile analyst doing a quick scan before a deep review.
+
+Read this LinkedIn profile and identify 3-5 specific pieces of missing context that would let you write much better rewrites.
+
+{LINKEDIN_PDF_BENCHMARK}
+
+THE PROFILE:
+{pdf_text}
+
+YOUR JOB:
+Find the exact gaps where you don't have enough information to write a high-quality rewrite.
+Look for:
+- Experience bullets with no numbers or scale — what were the actual metrics?
+- Projects mentioned vaguely — what did it actually do, who used it?
+- Skills listed without proof — which ones do they use daily vs just studied once?
+- About section with no proof points — what's their strongest single achievement?
+- Any role that sounds like "worked at X" with zero detail — what did they specifically own?
+
+Generate 3-5 questions. Each question must be:
+- Specific to THIS profile (not generic "tell me about your experience")
+- Answerable in 1-2 sentences
+- About something that will directly improve a rewrite (not curiosity)
+
+OUTPUT FORMAT — only these blocks, nothing else:
+
+[QUESTION: q1 | Your strongest achievement at [company from their PDF] | e.g. Reduced load time by 40%, handled 10k users, saved the team 5 hours/week]
+
+[QUESTION: q2 | label specific to what's missing | placeholder that shows what kind of answer helps]
+
+...up to 5 questions max.
+
+Do not write any other text. Only [QUESTION: id | label | placeholder] blocks.
+The id must be q1, q2, q3, q4, q5 in sequence.
+The label must reference their actual profile (their company name, their project name, their role).
+The placeholder must show them what a good answer looks like."""
+
+
+def get_linkedin_pdf_prompt(comic, pdf_text, mode="analyse", answers=None, current_hour=None):
+    """
+    Pass 2 — full analysis with optional context answers from Pass 1 questions.
+    answers: dict of {q_id: answer_text} from the question round, or None/empty.
+
+    Output format per issue:
+    [SECTION: <section name>]
+    [PRIORITY: High|Medium|Low]
+    [ISSUE: <one-line roast in comic voice>]
+    [WAS: <exact text from their PDF>]
+    [NOW: <ANVIL rewrite — benchmark quality>]
     """
     if current_hour is None:
         current_hour = get_ist_hour()
     time_ctx = get_time_context(current_hour)
     persona = COMIC_PERSONAS.get(comic, COMIC_PERSONAS["abhishek_upmanyu"])
 
+    # Build the answers block if any were provided
+    answers_block = ""
+    if answers:
+        lines = ["ADDITIONAL CONTEXT (the person answered these about their profile):"]
+        for qid, ans in answers.items():
+            if ans and ans.strip():
+                lines.append(f"  {qid}: {ans.strip()}")
+        if len(lines) > 1:
+            answers_block = "\n".join(lines) + "\n\nUse this context to write more specific, accurate rewrites. Weave real numbers and details from these answers into the [NOW] blocks.\n"
+
     return f"""{persona}
 
-Your task: Tear apart this person's LinkedIn profile PDF and give them a complete, section-by-section roast + rewrite.
+Your task: Analyse this LinkedIn profile PDF and identify every section that falls below professional standard.
 
+{LINKEDIN_PDF_BENCHMARK}
+
+──────────────────────────────────────────
+THE PROFILE TO ANALYSE:
+{pdf_text}
+──────────────────────────────────────────
+{answers_block}
 Time context: {time_ctx}
 
-Their full LinkedIn profile (extracted from PDF):
-{extracted_text}
+YOUR JOB:
+1. Read the full profile against the benchmark above
+2. Identify every issue — aim for 4-8 issues across the whole profile
+3. For each issue, write a roast line in your voice AND a rewrite that matches benchmark quality
+4. Prioritise by impact: High = kills their chances, Medium = weakens them, Low = polish
 
-Go through every section that has a problem — Headline, About, Experience, Skills, Education, Certifications.
-For each issue you find, output one block in EXACTLY this format (no deviations):
+PRIORITY DEFINITIONS:
+- High: Headline with "Open to Opportunities", About section with zero proof points, experience bullets with "Responsible for...", soft skills in skills section
+- Medium: Missing numbers in otherwise decent bullets, bio too long or too generic, no CTA in About
+- Low: Minor phrasing issues, could be sharper, formatting nitpicks
 
-[SECTION: <section name>]
-[PRIORITY: <High | Medium | Low>]
-[ISSUE: <one punchy sentence in your authentic comic voice — the roast of this specific problem>]
-[WAS: <exact text from their profile that has the problem>]
-[NOW: <your rewritten version — clean, specific, human, no buzzwords>]
+OUTPUT FORMAT — repeat this block for EVERY issue you find. No other text before, between, or after.
 
-PRIORITY rules — be honest, not brutal for the sake of it:
-- High: kills their credibility or loses them opportunities (bad headline, vague About, weak Experience bullets)
-- Medium: noticeable problem that a recruiter would clock (generic skills section, missing metrics, buzzword soup)
-- Low: polish issue — nice to fix but not urgent (minor phrasing, formatting quirks)
+[SECTION: Headline]
+[PRIORITY: High]
+[ISSUE: <your roast in your authentic voice — one punchy sentence about what's wrong>]
+[WAS: <copy the exact text from their profile that has the problem>]
+[NOW: <your rewrite — benchmark quality, specific, credible, human>]
 
-ISSUE voice rules — this is where your persona lives:
-- The [ISSUE] line is your roast in character — use your real verbal tics, Hinglish where it fits
-- Keep it to ONE punchy sentence — the sting should be fast
-- The [ISSUE] is the commentary; the [WAS]/[NOW] is the work
-- Do NOT put the actual rewrite in [ISSUE] — save that for [NOW]
+[SECTION: About]
+[PRIORITY: High]
+[ISSUE: ...]
+[WAS: ...]
+[NOW: ...]
 
-[WAS] rules:
-- Quote the EXACT text from their profile that has the problem
-- If it's a missing section (e.g., no About), write: "Missing — section not present"
-- Keep it as verbatim as possible — don't clean it up
+...and so on for every issue found.
 
-[NOW] rules:
-- Write the actual rewrite — not tips, the real thing
-- Clean, specific, no buzzwords, no "passionate about", no "seeking opportunities"
-- Sounds like a real person with something worth saying
-- Match the section type: Experience bullets start with action verbs + metrics; headline is punchy + specific; About is first-person and human
+REWRITE RULES — every [NOW] must:
+- Use the person's actual information from their PDF (job titles, company names, tech they mentioned, real projects)
+- Add specificity — if they said "worked on APIs" and mentioned the company elsewhere, infer plausible scale
+- Follow benchmark format exactly: action verb → what → result/scale
+- Sound like a real person wrote it, not a template
+- Be copy-paste ready for LinkedIn — no placeholders like [insert number here]
+- If a number isn't in the PDF, make the language so specific and credible that it doesn't need one
 
-Find ALL issues worth fixing — don't stop at 3 or 4. A typical LinkedIn profile has 6-12 things wrong.
-Output them grouped by priority (all High first, then Medium, then Low).
-Nothing else in your response — no preamble, no summary, no sign-off. Just the blocks.
+ROAST RULES — every [ISSUE] must:
+- Be in your authentic comic voice (Hinglish where it fits your persona)
+- Call out the SPECIFIC problem, not generic "this is bad"
+- Be punchy — one sentence maximum
+- Make them wince but also immediately understand what's wrong
+
+Do not write ANY text outside the [SECTION][PRIORITY][ISSUE][WAS][NOW] blocks.
+No preamble, no summary, no closing remarks — just the blocks.
 
 {PEER_TONE_NOTE}
 {LINKEDIN_ENGLISH_NOTE}"""
-
 
 COMIC_OPTIONS = [
     {"id": "ravi_gupta",        "name": "Ravi Gupta",         "vibe": "Deadpan Misdirection"},

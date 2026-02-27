@@ -19,6 +19,7 @@ from services.linkedin_service import LinkedInService
 from comics import (
     get_linkedin_prompt,
     get_linkedin_create_prompt,
+    get_linkedin_pdf_scan_prompt,
     get_linkedin_pdf_prompt,
     get_idea_create_prompt,
     get_stack_create_prompt,
@@ -99,21 +100,44 @@ def linkedin():
 
 @tools_bp.route("/linkedin-pdf", methods=["POST"])
 def linkedin_pdf():
+    """
+    Two-pass PDF analysis.
+    Pass 1 (mode=scan):    Upload PDF → returns targeted questions
+    Pass 2 (mode=analyse): Upload PDF + answers → returns full diff output
+    """
     comic = request.form.get("comic", "abhishek_upmanyu")
-    mode  = request.form.get("mode", "analyse")   # analyse | rewrite
+    mode  = request.form.get("mode", "scan")   # scan | analyse
     file  = request.files.get("pdf")
 
     if not file:
         return jsonify({"error": "No PDF uploaded"}), 400
 
-    text, extract_error = LinkedInService.extract_pdf_text(file.read())
+    pdf_bytes = file.read()
+    text, extract_error = LinkedInService.extract_pdf_text(pdf_bytes)
     if extract_error:
         return jsonify({"error": extract_error}), 400
 
-    prompt = get_linkedin_pdf_prompt(comic, text, mode)
-    result = AIService.ask(prompt)
-    DatabaseService.log_tool_use("linkedin_pdf")
-    return jsonify({"message": result})
+    if mode == "scan":
+        # Pass 1 — just generate questions, no comic persona, fast
+        prompt = get_linkedin_pdf_scan_prompt(text)
+        result = AIService.ask(prompt)
+        return jsonify({"mode": "scan", "message": result})
+
+    else:
+        # Pass 2 — full analysis with optional answers
+        # Answers come as form fields: answer_q1, answer_q2, etc.
+        answers = {}
+        for key in request.form:
+            if key.startswith("answer_"):
+                qid = key.replace("answer_", "")
+                val = request.form.get(key, "").strip()
+                if val:
+                    answers[qid] = val
+
+        prompt = get_linkedin_pdf_prompt(comic, text, mode="analyse", answers=answers or None)
+        result = AIService.ask(prompt)
+        DatabaseService.log_tool_use("linkedin_pdf")
+        return jsonify({"mode": "analyse", "message": result})
 
 
 # ── Idea Checker ───────────────────────────────────────────────────────────

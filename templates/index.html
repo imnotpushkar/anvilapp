@@ -2438,6 +2438,116 @@
     .pdf-foot-btn.dismissed { opacity: 0.3; pointer-events: none; }
     .pdf-inline-copy-btn { font-family: var(--mono); font-size: 7px; letter-spacing: 0.1em; padding: 2px 7px; background: none; border: 1px solid var(--border); color: var(--text-dim); cursor: pointer; transition: all 0.15s; }
     .pdf-inline-copy-btn:hover { border-color: var(--roaster); color: var(--roaster); }
+    /* ── PDF Question Cards (Pass 1) ── */
+    .pdf-q-wrap {
+      display: none;
+      flex-direction: column;
+      gap: 0;
+    }
+    .pdf-q-wrap.visible { display: flex; }
+
+    .pdf-q-header {
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .pdf-q-title {
+      font-family: var(--display);
+      font-size: 20px;
+      letter-spacing: 0.04em;
+      color: var(--text-bright);
+      margin-bottom: 4px;
+    }
+    .pdf-q-sub {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--roaster);
+    }
+
+    .pdf-q-list { padding: 12px 0; }
+
+    .pdf-q-card {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .pdf-q-card:last-child { border-bottom: none; }
+
+    .pdf-q-num {
+      font-family: var(--mono);
+      font-size: 8px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+    .pdf-q-label {
+      font-family: var(--sans);
+      font-size: 13px;
+      color: var(--text-bright);
+      font-weight: 500;
+      line-height: 1.4;
+    }
+    .pdf-q-input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border-bright);
+      color: var(--text-bright);
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 10px 12px;
+      outline: none;
+      transition: border-color 0.2s;
+      resize: none;
+      min-height: 56px;
+      line-height: 1.5;
+    }
+    .pdf-q-input:focus { border-color: var(--roaster); }
+    .pdf-q-input::placeholder { color: var(--text-dim); font-size: 11px; }
+
+    .pdf-q-skip {
+      font-family: var(--mono);
+      font-size: 8px;
+      letter-spacing: 0.12em;
+      color: var(--text-dim);
+      text-decoration: none;
+      cursor: pointer;
+      align-self: flex-end;
+      transition: color 0.2s;
+    }
+    .pdf-q-skip:hover { color: var(--accent); }
+
+    .pdf-q-footer {
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .pdf-q-hint {
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--text-dim);
+      letter-spacing: 0.06em;
+    }
+    .pdf-q-analyse-btn {
+      font-family: var(--display);
+      font-size: 16px;
+      letter-spacing: 0.08em;
+      padding: 10px 24px;
+      background: var(--roaster);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      flex-shrink: 0;
+    }
+    .pdf-q-analyse-btn:hover { opacity: 0.85; }
+    .pdf-q-analyse-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
 
 </style>
 </head>
@@ -2826,7 +2936,22 @@
               </div>
             </div>
 
-            <!-- Diff output (shown after response) -->
+            <!-- Pass 1: Question cards (shown after scan) -->
+            <div class="pdf-q-wrap" id="pdf-q-wrap">
+              <div class="pdf-q-header">
+                <div class="pdf-q-title">Quick Questions</div>
+                <div class="pdf-q-sub">// helps anvil write better rewrites</div>
+              </div>
+              <div class="pdf-q-list" id="pdf-q-list">
+                <!-- Questions rendered here by JS -->
+              </div>
+              <div class="pdf-q-footer">
+                <span class="pdf-q-hint">Answer what you can. Skip what you can't.</span>
+                <button class="pdf-q-analyse-btn" onclick="submitPdfAnalyse()">Analyse Now →</button>
+              </div>
+            </div>
+
+            <!-- Pass 2: Diff output (shown after full analysis) -->
             <div class="pdf-output-wrap" id="pdf-output-wrap"></div>
           </div>
         </div>
@@ -4711,22 +4836,31 @@
 
 
     // ══════════════════════════════════════════════
-    // PDF TAB — LinkedIn PDF Analysis
+    // PDF — Two-Pass LinkedIn PDF Analysis
+    // Pass 1: scan → questions
+    // Pass 2: analyse → diff output
     // ══════════════════════════════════════════════
 
     let pdfFile = null;
     let pdfQuipTimer = null;
     let pdfQuipStep = 0;
+    let pdfRawText = null;     // store PDF text between passes (we re-upload; this is just for UX)
+    let pdfScanQuestions = []; // parsed questions from Pass 1
 
-    // Quip data — will be driven by selected comic in prod;
-    // hardcoded Abhishek Upmanyu style for now, backend will generate these
     const PDF_QUIP_STEPS = [
-      { section: 'Scanning Headline',      pill: 'ppill-headline', quip: "Dekh raha hoon tere headline ko... 'Open to Opportunities' — bhai yeh toh sab likhte hain." },
-      { section: 'Headline — Issue Found', pill: 'ppill-headline', quip: "Tera Azure cert kahan gaya? Aur tera deployed project? Headline mein jagah hai bhai.", done: 'ppill-headline' },
-      { section: 'Scanning About',         pill: 'ppill-about',    quip: "'Passionate developer who loves coding.' Yeh sentence itna common hai ki ATS bhi yawn karta hai." },
-      { section: 'About — Issue Found',    pill: null,             quip: "Real kaam hai tere paas. Real project. Real users. LinkedIn pe yeh dikh nahi raha — tragically.", done: 'ppill-about' },
-      { section: 'Scanning Experience',    pill: 'ppill-exp',      quip: "Ek line mein 'Flask aur AI technologies' — tune pura backend, auth, DB, deployment kiya. Yeh sab ek line mein?", done: 'ppill-exp' },
-      { section: 'Scanning Skills',        pill: 'ppill-skills',   quip: "'Problem Solving' — bhai yeh skill nahi hai. Recruiter ko Flask chahiye, Supabase chahiye, keywords chahiye.", done: 'ppill-skills' },
+      { section: 'Scanning Headline',   pill: 'ppill-headline', quip: "Dekh raha hoon tere headline ko... 'Open to Opportunities' — bhai yeh toh sab likhte hain." },
+      { section: 'Headline',            pill: null,             quip: "Tera differentiator kahan hai? Recruiter ko reason chahiye, job title toh CV pe hai hi.", done: 'ppill-headline' },
+      { section: 'Scanning About',      pill: 'ppill-about',    quip: "'Passionate developer who loves coding.' Yeh sentence itna common hai ki ATS bhi yawn karta hai." },
+      { section: 'About',               pill: null,             quip: "Real kaam hai tere paas. Real project. Real users. LinkedIn pe yeh dikh nahi raha — tragically.", done: 'ppill-about' },
+      { section: 'Scanning Experience', pill: 'ppill-exp',      quip: "Ek line mein 'worked on backend' — tune pura system kiya. Yeh sab ek line mein?", done: 'ppill-exp' },
+      { section: 'Scanning Skills',     pill: 'ppill-skills',   quip: "'Problem Solving' — bhai yeh skill nahi hai. Recruiter ko Flask chahiye, Docker chahiye, keywords chahiye.", done: 'ppill-skills' },
+    ];
+
+    const PDF_SCAN_QUIP_STEPS = [
+      { section: 'Reading Profile',    pill: 'ppill-headline', quip: "Pehle padh toh loon poora... teri headline dekh ke already samajh aa gaya kya hoga." },
+      { section: 'Finding Gaps',       pill: 'ppill-about',    quip: "Dekh raha hoon exactly kahan se information missing hai — tujhse kuch poochna padega." },
+      { section: 'Writing Questions',  pill: 'ppill-exp',      quip: "3-4 sawal likh raha hoon jo actually matter karte hain — generic nahi, tere profile ke baare mein specific.", done: 'ppill-exp' },
+      { section: 'Almost Done',        pill: 'ppill-skills',   quip: "Bas thoda aur... phir tu answer karega aur main sahi se rewrite karunga.", done: 'ppill-skills' },
     ];
 
     function pdfFileChosen(input) {
@@ -4735,9 +4869,6 @@
         const chosen = document.getElementById('pdf-file-chosen');
         chosen.style.display = 'block';
         chosen.textContent = '✓ ' + pdfFile.name;
-        // Signal PDF mode on button
-        const btn = document.getElementById('li-submit-btn');
-        if (btn) btn.innerText = 'ANALYSE PDF 📄';
       }
     }
 
@@ -4756,22 +4887,21 @@
           const chosen = document.getElementById('pdf-file-chosen');
           chosen.style.display = 'block';
           chosen.textContent = '✓ ' + file.name;
-          const btn = document.getElementById('li-submit-btn');
-          if (btn) btn.innerText = 'ANALYSE PDF 📄';
         }
       });
     })();
 
-    function startPdfQuips() {
+    function startPdfQuips(steps) {
       if (pdfQuipTimer) clearInterval(pdfQuipTimer);
       pdfQuipStep = 0;
+      const stepsArr = steps || PDF_QUIP_STEPS;
       // Reset pills
       document.querySelectorAll('.pdf-pill').forEach(p => p.className = 'pdf-pill');
-      document.querySelectorAll('.pdf-quip-dot').forEach((d,i) => d.classList.toggle('active', i === 0));
+      document.querySelectorAll('.pdf-quip-dot').forEach((d, i) => d.classList.toggle('active', i === 0));
 
       function step() {
-        if (pdfQuipStep >= PDF_QUIP_STEPS.length) return;
-        const s = PDF_QUIP_STEPS[pdfQuipStep];
+        if (pdfQuipStep >= stepsArr.length) return;
+        const s = stepsArr[pdfQuipStep];
         const txt = document.getElementById('pdf-quip-text');
         txt.classList.add('fade');
         setTimeout(() => {
@@ -4780,7 +4910,7 @@
           txt.classList.remove('fade');
           if (s.pill) document.getElementById(s.pill).className = 'pdf-pill scanning';
           if (s.done) document.getElementById(s.done).className = 'pdf-pill done';
-          document.querySelectorAll('.pdf-quip-dot').forEach((d,i) => d.classList.toggle('active', i === pdfQuipStep));
+          document.querySelectorAll('.pdf-quip-dot').forEach((d, i) => d.classList.toggle('active', i === pdfQuipStep));
           pdfQuipStep++;
         }, 300);
       }
@@ -4792,46 +4922,56 @@
       if (pdfQuipTimer) { clearInterval(pdfQuipTimer); pdfQuipTimer = null; }
     }
 
+    function pdfShowSpinner() {
+      document.getElementById('pdf-right-panel').style.display = 'block';
+      document.getElementById('pdf-spinner-wrap').classList.add('visible');
+      document.getElementById('pdf-q-wrap').classList.remove('visible');
+      document.getElementById('pdf-output-wrap').classList.remove('visible');
+      document.getElementById('pdf-output-wrap').innerHTML = '';
+    }
+
+    function pdfHideSpinner() {
+      stopPdfQuips();
+      document.getElementById('pdf-spinner-wrap').classList.remove('visible');
+    }
+
+    // ── PASS 1: Upload → Scan → Show Questions ──
+
     async function submitPdf() {
       if (!pdfFile) { alert('Upload your LinkedIn PDF first!'); return; }
 
       const btn = document.getElementById('li-submit-btn');
-      const comic = document.getElementById('roaster-comic').value;
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner"></span> READING PDF...';
 
-      // Switch right panel to PDF output
-      document.getElementById('verdict-panel').style.display = 'none';
-      document.getElementById('pdf-right-panel').style.display = 'block';
-      document.getElementById('pdf-spinner-wrap').classList.add('visible');
-      document.getElementById('pdf-output-wrap').classList.remove('visible');
-      document.getElementById('pdf-output-wrap').innerHTML = '';
-      startPdfQuips();
+      pdfShowSpinner();
+      startPdfQuips(PDF_SCAN_QUIP_STEPS);
 
       try {
         const formData = new FormData();
         formData.append('pdf', pdfFile);
-        formData.append('comic', comic);
-        formData.append('mode', 'analyse');
+        formData.append('mode', 'scan');
 
         const res = await fetch('/api/linkedin-pdf', { method: 'POST', body: formData });
         const data = await res.json();
 
-        stopPdfQuips();
-        document.getElementById('pdf-spinner-wrap').classList.remove('visible');
+        pdfHideSpinner();
 
         if (data.error) {
           document.getElementById('pdf-output-wrap').innerHTML =
-            '<div style="padding:20px;font-family:var(--mono);font-size:12px;color:#ff6b6b;border:1px solid rgba(255,107,107,0.2);border-left:3px solid #ff6b6b;">// ' + data.error + '</div>';
+            '<div style="padding:20px;font-family:var(--mono);font-size:12px;color:#ff6b6b;border:1px solid rgba(255,107,107,0.2);border-left:3px solid #ff6b6b;">// ' + escHtml(data.error) + '</div>';
           document.getElementById('pdf-output-wrap').classList.add('visible');
         } else {
-          renderPdfOutput(data.message || '');
-          const earned = addXP(30);
-          showXPFloat(earned, btn);
+          pdfScanQuestions = parsePdfQuestions(data.message || '');
+          if (pdfScanQuestions.length === 0) {
+            // No questions parsed — skip straight to analysis
+            await submitPdfAnalyse();
+          } else {
+            renderPdfQuestions(pdfScanQuestions);
+          }
         }
       } catch(e) {
-        stopPdfQuips();
-        document.getElementById('pdf-spinner-wrap').classList.remove('visible');
+        pdfHideSpinner();
         document.getElementById('pdf-output-wrap').innerHTML =
           '<div style="padding:20px;font-family:var(--mono);font-size:12px;color:#ff6b6b;">// Something went wrong. Try again.</div>';
         document.getElementById('pdf-output-wrap').classList.add('visible');
@@ -4839,11 +4979,107 @@
 
       btn.disabled = false;
       btn.innerHTML = 'CHECK IT 💼';
+      document.querySelector('[data-mode="pdf"] .pdf-submit-label') && (document.getElementById('li-submit-btn').innerHTML = 'CHECK IT 💼');
+    }
+
+    function parsePdfQuestions(raw) {
+      // Parse [QUESTION: id | label | placeholder] blocks
+      const regex = /\[QUESTION:\s*([^|\]]+)\|([^|\]]+)\|([^\]]+)\]/g;
+      const questions = [];
+      let m;
+      while ((m = regex.exec(raw)) !== null) {
+        questions.push({
+          id:          m[1].trim(),
+          label:       m[2].trim(),
+          placeholder: m[3].trim(),
+        });
+      }
+      return questions;
+    }
+
+    function renderPdfQuestions(questions) {
+      const list = document.getElementById('pdf-q-list');
+      list.innerHTML = '';
+
+      questions.forEach((q, i) => {
+        const card = document.createElement('div');
+        card.className = 'pdf-q-card';
+        card.innerHTML = `
+          <div class="pdf-q-num">// Question ${i + 1} of ${questions.length}</div>
+          <div class="pdf-q-label">${escHtml(q.label)}</div>
+          <textarea
+            class="pdf-q-input"
+            id="pdf-qa-${escHtml(q.id)}"
+            placeholder="${escHtml(q.placeholder)}"
+            rows="2"
+          ></textarea>
+          <span class="pdf-q-skip" onclick="this.closest('.pdf-q-card').querySelector('.pdf-q-input').value=''">skip</span>
+        `;
+        list.appendChild(card);
+      });
+
+      document.getElementById('pdf-q-wrap').classList.add('visible');
+    }
+
+    // ── PASS 2: Answers → Full Analysis ──
+
+    async function submitPdfAnalyse() {
+      if (!pdfFile) { alert('PDF not found. Please re-upload.'); return; }
+
+      const analyseBtn = document.getElementById('pdf-q-wrap').querySelector('.pdf-q-analyse-btn');
+      if (analyseBtn) { analyseBtn.disabled = true; analyseBtn.textContent = 'Analysing...'; }
+
+      const mainBtn = document.getElementById('li-submit-btn');
+      mainBtn.disabled = true;
+
+      pdfShowSpinner();
+      startPdfQuips(PDF_QUIP_STEPS);
+
+      const comic = document.getElementById('roaster-comic').value;
+
+      try {
+        const formData = new FormData();
+        formData.append('pdf', pdfFile);
+        formData.append('comic', comic);
+        formData.append('mode', 'analyse');
+
+        // Collect answers
+        pdfScanQuestions.forEach(q => {
+          const inputEl = document.getElementById('pdf-qa-' + q.id);
+          if (inputEl && inputEl.value.trim()) {
+            formData.append('answer_' + q.id, inputEl.value.trim());
+          }
+        });
+
+        const res = await fetch('/api/linkedin-pdf', { method: 'POST', body: formData });
+        const data = await res.json();
+
+        pdfHideSpinner();
+        document.getElementById('pdf-q-wrap').classList.remove('visible');
+
+        if (data.error) {
+          document.getElementById('pdf-output-wrap').innerHTML =
+            '<div style="padding:20px;font-family:var(--mono);font-size:12px;color:#ff6b6b;border:1px solid rgba(255,107,107,0.2);border-left:3px solid #ff6b6b;">// ' + escHtml(data.error) + '</div>';
+          document.getElementById('pdf-output-wrap').classList.add('visible');
+        } else {
+          renderPdfOutput(data.message || '');
+          const earned = addXP(30);
+          showXPFloat(earned, mainBtn);
+        }
+      } catch(e) {
+        pdfHideSpinner();
+        document.getElementById('pdf-output-wrap').innerHTML =
+          '<div style="padding:20px;font-family:var(--mono);font-size:12px;color:#ff6b6b;">// Something went wrong. Try again.</div>';
+        document.getElementById('pdf-output-wrap').classList.add('visible');
+      }
+
+      mainBtn.disabled = false;
+      mainBtn.innerHTML = 'CHECK IT 💼';
+      if (analyseBtn) { analyseBtn.disabled = false; analyseBtn.textContent = 'Analyse Now →'; }
     }
 
     function renderPdfOutput(raw) {
-      // Parse [SECTION:...][PRIORITY:...][ISSUE:...][WAS:...][NOW:...] blocks
-      const blockRegex = /\[SECTION:\s*([^\]]+)\]\s*\[PRIORITY:\s*([^\]]+)\]\s*\[ISSUE:\s*([^\]]+)\]\s*\[WAS:\s*([\s\S]*?)\]\s*\[NOW:\s*([\s\S]*?)\](?=\s*\[SECTION:|\s*$)/g;
+      const blockRegex = /\[SECTION:\s*([^\]]+)\]\s*\[PRIORITY:\s*([^\]]+)\]\s*\[ISSUE:\s*([^\]]+)\]\s*\[WAS:\s*([\s\S]*?)\]\s*\[NOW:\s*([\s\S]*?)\](?=\[SECTION:|$)/g;
       const issues = [];
       let match;
       while ((match = blockRegex.exec(raw)) !== null) {
@@ -4857,9 +5093,8 @@
       }
 
       if (issues.length === 0) {
-        // Fallback: show raw response if parsing fails
         document.getElementById('pdf-output-wrap').innerHTML =
-          '<div style="padding:20px;font-family:var(--mono);font-size:12px;color:var(--text);line-height:1.7;white-space:pre-wrap;">' + raw + '</div>';
+          '<div style="padding:20px;font-family:var(--mono);font-size:12px;color:var(--text);line-height:1.7;white-space:pre-wrap;">' + escHtml(raw) + '</div>';
         document.getElementById('pdf-output-wrap').classList.add('visible');
         return;
       }
@@ -4868,7 +5103,6 @@
       const med  = issues.filter(i => i.priority.toLowerCase() === 'medium');
       const low  = issues.filter(i => i.priority.toLowerCase() === 'low');
 
-      // Count lines added/removed (rough estimate)
       let totalAdd = 0, totalRem = 0;
       issues.forEach(i => {
         totalAdd += i.now.split('\n').length;
@@ -4891,30 +5125,28 @@
       html += '<button class="pdf-copy-all-btn" onclick="pdfCopyAll()">Copy All →</button>';
       html += '</div></div>';
 
-      // Render groups
       function renderGroup(group, label) {
         if (!group.length) return '';
         let g = '<div class="pdf-sec-divider">' + label + '</div>';
         group.forEach((issue, idx) => {
           const pri = issue.priority.toLowerCase();
-          const dotCls = 'pdf-dot-' + (pri === 'high' ? 'high' : pri === 'medium' ? 'med' : 'low');
+          const dotCls  = 'pdf-dot-'  + (pri === 'high' ? 'high' : pri === 'medium' ? 'med' : 'low');
           const lineCls = 'pdf-dot-line-' + (pri === 'high' ? 'high' : pri === 'medium' ? 'med' : 'low');
-          const tagCls  = 'pdf-tag-' + (pri === 'high' ? 'high' : pri === 'medium' ? 'med' : 'low');
+          const tagCls  = 'pdf-tag-'  + (pri === 'high' ? 'high' : pri === 'medium' ? 'med' : 'low');
           const priLabel = pri.charAt(0).toUpperCase() + pri.slice(1);
-          const uid = 'pdi-' + label.replace(/\s/g,'') + idx;
+          const uid = 'pdi-' + label.replace(/\s/g, '') + idx;
           g += '<div class="pdf-issue-card" id="card-' + uid + '">';
           g += '<div class="pdf-card-head">';
           g += '<div class="pdf-priority-col"><div class="pdf-dot ' + dotCls + '"></div><div class="pdf-dot-line ' + lineCls + '"></div></div>';
           g += '<div class="pdf-card-body">';
           g += '<div class="pdf-card-top">';
-          g += '<span class="pdf-card-section">' + issue.section + '</span>';
+          g += '<span class="pdf-card-section">' + escHtml(issue.section) + '</span>';
           g += '<span class="pdf-card-tag ' + tagCls + '">' + priLabel + '</span>';
           g += '</div>';
-          g += '<div class="pdf-card-roast">' + issue.issue + '</div>';
+          g += '<div class="pdf-card-roast">' + escHtml(issue.issue) + '</div>';
           g += '</div>';
           g += '<button class="pdf-compare-btn" onclick="pdfToggleCompare(this)">Compare</button>';
           g += '</div>';
-          // Diff grid
           g += '<div class="pdf-diff-grid" id="dg-' + uid + '">';
           g += '<div class="pdf-diff-old" id="old-' + uid + '">';
           g += '<div class="pdf-col-label pdf-col-was">✕ Was</div>';
@@ -4926,7 +5158,6 @@
           g += '</div>';
           g += '<div class="pdf-new-text" contenteditable="true">' + escHtml(issue.now) + '</div>';
           g += '</div></div>';
-          // Footer
           g += '<div class="pdf-card-foot">';
           g += '<button class="pdf-foot-btn" onclick="pdfCopyCard(this)">Copy Rewrite</button>';
           g += '<button class="pdf-foot-btn" onclick="pdfDismissCard(this)">Dismiss</button>';
@@ -4938,8 +5169,6 @@
       html += renderGroup(high, 'High Priority');
       html += renderGroup(med,  'Medium Priority');
       html += renderGroup(low,  'Low Priority');
-
-      // XP toast
       html += '<div class="xp-toast" style="margin-top:14px;">⬡ +30 XP EARNED — LINKEDIN PDF ANALYSED</div>';
 
       document.getElementById('pdf-output-wrap').innerHTML = html;
@@ -4947,13 +5176,14 @@
     }
 
     function escHtml(str) {
-      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      if (!str) return '';
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
     function pdfToggleCompare(btn) {
       const card = btn.closest('.pdf-issue-card');
-      const dg  = card.querySelector('.pdf-diff-grid');
-      const old = card.querySelector('.pdf-diff-old');
+      const dg   = card.querySelector('.pdf-diff-grid');
+      const old  = card.querySelector('.pdf-diff-old');
       const open = old.classList.toggle('visible');
       dg.classList.toggle('split', open);
       btn.textContent = open ? 'Hide Original' : 'Compare';
