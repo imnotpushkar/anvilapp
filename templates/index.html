@@ -7202,18 +7202,27 @@
 
 
     function renderPdfOutput(raw) {
-      const blockRegex = /\[SECTION:\s*([^\]]+)\]\s*\[PRIORITY:\s*([^\]]+)\]\s*\[ISSUE:\s*([^\]]+)\]\s*\[WAS:\s*([\s\S]*?)\]\s*\[NOW:\s*([\s\S]*?)\](?=\[SECTION:|$)/g;
+      // Split on [SECTION: — each chunk is one issue block
+      const chunks = raw.split(/(?=\[SECTION:)/);
       const issues = [];
-      let match;
-      while ((match = blockRegex.exec(raw)) !== null) {
-        issues.push({
-          section: match[1].trim(),
-          priority: match[2].trim(),
-          issue: match[3].trim(),
-          was: match[4].trim(),
-          now: match[5].trim(),
-        });
-      }
+      const fieldRe = {
+        section:  /\[SECTION:\s*([\s\S]*?)\]/,
+        priority: /\[PRIORITY:\s*([\s\S]*?)\]/,
+        issue:    /\[ISSUE:\s*([\s\S]*?)\]/,
+        was:      /\[WAS:\s*([\s\S]*?)\](?=\s*\[(?:NOW|SECTION|PRIORITY|ISSUE):|$)/,
+        now:      /\[NOW:\s*([\s\S]*?)\](?=\s*\[(?:SECTION|PRIORITY|ISSUE|WAS):|$)/,
+      };
+      chunks.forEach(chunk => {
+        chunk = chunk.trim();
+        if (!chunk.startsWith('[SECTION:')) return;
+        const get = key => { const m = fieldRe[key].exec(chunk); return m ? m[1].trim() : ''; };
+        const section  = get('section');
+        const priority = get('priority');
+        const issue    = get('issue');
+        const was      = get('was');
+        const now      = get('now');
+        if (section && priority) issues.push({ section, priority, issue, was, now });
+      });
 
       if (issues.length === 0) {
         document.getElementById('pdf-output-wrap').innerHTML =
